@@ -17,6 +17,10 @@ const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-t
 
 const PAGINAS_ADMIN: { to: string; label: string }[] = [
     { to: '/gestao-comercial', label: 'Gestão Comercial' },
+    { to: '/estoque-transferencias', label: 'Estoque & Transferências' },
+    { to: '/comparativo-fabricante', label: 'Comparativo por Fabricante' },
+    { to: '/analise-margem', label: 'Análise de Margem' },
+    { to: '/ticket-operador', label: 'Ticket por Operador' },
     { to: '/metas', label: 'Metas por Seção' },
     { to: '/tributacao', label: 'Tributação' },
 ]

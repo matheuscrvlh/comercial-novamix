@@ -68,3 +68,70 @@ export interface TributacaoRow {
     PERICMSUBST: number
     DESCRSITTRIBUTARIA: string | null
 }
+
+export interface TransferenciaLojaRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    VALOR_ENVIADO: number
+    VALOR_RECEBIDO: number
+}
+
+export interface EstoqueNegativoRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    DESCRICAOPRODUTO: string
+    QTDATUALESTOQUE: number
+    VALATUALESTOQUE: number
+}
+
+export interface EstoqueParadoRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    DESCRICAOPRODUTO: string
+    QTDATUALESTOQUE: number
+    VALATUALESTOQUE: number
+    DTULTIMAVENDA: string | null
+}
+
+export interface EstoqueResumoData {
+    transferencias: TransferenciaLojaRow[]
+    negativo: EstoqueNegativoRow[]
+    parado: EstoqueParadoRow[]
+}
+
+export interface Fabricante {
+    FABRICANTE: string
+}
+
+export type FlagMargem = 'ACIMA_40' | 'ABAIXO_MENOS15' | 'MUITO_ABAIXO_META' | 'ZERO'
+
+export interface ProdutoMargemRow {
+    IDSECAO: number
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    VENDA: number
+    LUCRO: number
+    MARGEM: number
+    META_MARGEM_PCT: number | null
+    FLAGS: FlagMargem[]
+}
+
+export interface TicketOperadorRow {
+    IDUSUARIO: number
+    NOME_OPERADOR: string
+    TICKETS_POSITIVOS: number
+    TICKETS_NEGATIVOS: number
+    TOTAL_TICKETS: number
+}
+
+export interface ComparativoFabricanteRow {
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    VENDA_ATUAL: number
+    LUCRO_ATUAL: number
+    VENDA_ANO_ANTERIOR: number
+    LUCRO_ANO_ANTERIOR: number
+    VENDA_2_ANOS_ANTES: number
+    LUCRO_2_ANOS_ANTES: number
+    VALOR_ESTOQUE: number
+}

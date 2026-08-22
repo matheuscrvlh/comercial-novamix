@@ -154,6 +154,107 @@ export async function getSecoes(req: FastifyRequest, res: FastifyReply) {
     }
 }
 
+export async function getTicketOperador(req: FastifyRequest, res: FastifyReply) {
+    const filiaisLiberadas = await resolveFiliais(req, res)
+    if (!filiaisLiberadas) return
+
+    const periodo = resolvePeriodo(req, res)
+    if (!periodo) return
+
+    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const sql = loadQueryComercial('ticket_operador.sql').replaceAll('{{FILIAIS}}', filiais.join(','))
+
+    const conn = await connCiss()
+    try {
+        const data = await conn.query(sql, [periodo.inicio, periodo.fim])
+        res.send(data)
+    } finally {
+        await conn.close()
+    }
+}
+
+export async function getFabricantes(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return
+
+    const sql = loadQueryComercial('fabricantes.sql')
+
+    const conn = await connCiss()
+    try {
+        const data = await conn.query(sql)
+        res.send(data)
+    } finally {
+        await conn.close()
+    }
+}
+
+function deslocarAno(data: string, anos: number) {
+    const [ano, mes, dia] = data.split('-').map(Number)
+    const d = new Date(Date.UTC(ano - anos, mes - 1, dia))
+    return d.toISOString().slice(0, 10)
+}
+
+interface ComparativoQuery extends PeriodoQuery {
+    fabricante?: string
+}
+
+export async function getComparativoFabricante(req: FastifyRequest, res: FastifyReply) {
+    const filiaisLiberadas = await resolveFiliais(req, res)
+    if (!filiaisLiberadas) return
+
+    const periodo = resolvePeriodo(req, res)
+    if (!periodo) return
+
+    const { fabricante } = req.query as ComparativoQuery
+    if (!fabricante || fabricante.trim().length === 0) {
+        res.code(400).send({ error: 'Informe o parametro fabricante.' })
+        return
+    }
+
+    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = filiais.join(',')
+
+    const vendaSql = loadQueryComercial('venda_produto_fabricante.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const estoqueSql = loadQueryComercial('estoque_produto_fabricante.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+
+    const periodoAnterior = { inicio: deslocarAno(periodo.inicio, 1), fim: deslocarAno(periodo.fim, 1) }
+    const periodo2AnosAtras = { inicio: deslocarAno(periodo.inicio, 2), fim: deslocarAno(periodo.fim, 2) }
+
+    const conn = await connCiss()
+    try {
+        const [atual, anterior, doisAnos, estoque] = await Promise.all([
+            conn.query(vendaSql, [periodo.inicio, periodo.fim, fabricante]),
+            conn.query(vendaSql, [periodoAnterior.inicio, periodoAnterior.fim, fabricante]),
+            conn.query(vendaSql, [periodo2AnosAtras.inicio, periodo2AnosAtras.fim, fabricante]),
+            conn.query(estoqueSql, [fabricante]),
+        ])
+
+        const anteriorPorProduto = new Map(anterior.map((r: any) => [r.IDSUBPRODUTO, r]))
+        const doisAnosPorProduto = new Map(doisAnos.map((r: any) => [r.IDSUBPRODUTO, r]))
+        const estoquePorProduto = new Map(estoque.map((r: any) => [r.IDSUBPRODUTO, r.VALOR_ESTOQUE]))
+
+        const linhas = atual.map((row: any) => {
+            const ant: any = anteriorPorProduto.get(row.IDSUBPRODUTO)
+            const dois: any = doisAnosPorProduto.get(row.IDSUBPRODUTO)
+            return {
+                IDSUBPRODUTO: row.IDSUBPRODUTO,
+                DESCRICAOPRODUTO: row.DESCRICAOPRODUTO,
+                VENDA_ATUAL: Number(row.VENDA) || 0,
+                LUCRO_ATUAL: Number(row.LUCRO) || 0,
+                VENDA_ANO_ANTERIOR: Number(ant?.VENDA) || 0,
+                LUCRO_ANO_ANTERIOR: Number(ant?.LUCRO) || 0,
+                VENDA_2_ANOS_ANTES: Number(dois?.VENDA) || 0,
+                LUCRO_2_ANOS_ANTES: Number(dois?.LUCRO) || 0,
+                VALOR_ESTOQUE: Number(estoquePorProduto.get(row.IDSUBPRODUTO)) || 0,
+            }
+        })
+
+        res.send(linhas)
+    } finally {
+        await conn.close()
+    }
+}
+
 export async function getOperacional(req: FastifyRequest, res: FastifyReply) {
     const filiaisLiberadas = await resolveFiliais(req, res)
     if (!filiaisLiberadas) return
