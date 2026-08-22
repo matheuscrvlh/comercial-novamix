@@ -154,6 +154,64 @@ export async function getSecoes(req: FastifyRequest, res: FastifyReply) {
     }
 }
 
+export async function getOperacional(req: FastifyRequest, res: FastifyReply) {
+    const filiaisLiberadas = await resolveFiliais(req, res)
+    if (!filiaisLiberadas) return
+
+    const periodo = resolvePeriodo(req, res)
+    if (!periodo) return
+
+    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = filiais.join(',')
+
+    const perdasSql = loadQueryComercial('perdas_fornecedor.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const avariaSql = loadQueryComercial('avaria_estoque.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const pedidosPendentesSql = loadQueryComercial('pedidos_pendentes.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+
+    const conn = await connCiss()
+    try {
+        const [perdas, avaria, pedidosPendentes] = await Promise.all([
+            conn.query(perdasSql, [periodo.inicio, periodo.fim]),
+            conn.query(avariaSql, [periodo.inicio, periodo.fim]),
+            conn.query(pedidosPendentesSql),
+        ])
+        res.send({ perdas, avaria, pedidosPendentes })
+    } finally {
+        await conn.close()
+    }
+}
+
+interface BuscaQuery {
+    busca?: string
+}
+
+export async function getTributacao(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return
+
+    if (permission !== ADMIN_ACCESS) {
+        res.code(403).send({ error: 'Acesso restrito a administradores.' })
+        return
+    }
+
+    const { busca } = req.query as BuscaQuery
+
+    if (!busca || busca.trim().length < 3) {
+        res.code(400).send({ error: 'Informe ao menos 3 caracteres para buscar.' })
+        return
+    }
+
+    const sql = loadQueryComercial('tributacao_busca.sql')
+
+    const conn = await connCiss()
+    try {
+        const data = await conn.query(sql, [`%${busca.trim()}%`])
+        res.send(data)
+    } finally {
+        await conn.close()
+    }
+}
+
 export async function getVendaSecaoLoja(req: FastifyRequest, res: FastifyReply) {
     const filiaisLiberadas = await resolveFiliais(req, res)
     if (!filiaisLiberadas) return

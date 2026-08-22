@@ -12,7 +12,7 @@ WITH BASE AS (
             ELSE 0
         END AS VALLUCRO,
         CASE
-            WHEN OI.TIPOMOVIMENTO = 'E'
+            WHEN OI.TIPOMOVIMENTO = 'C'
                 THEN EA.VALTOTLIQUIDO
             ELSE 0
         END AS VALCOMPRA
@@ -28,7 +28,7 @@ WITH BASE AS (
             ON OI.IDOPERACAO = EA.IDOPERACAO
     WHERE
         OI.FLAGMOVPRODUTOS = 'T'
-        AND OI.TIPOMOVIMENTO IN ('V', 'E')
+        AND OI.TIPOMOVIMENTO IN ('V', 'C')
         AND NES.TIPOITEMCATEGORIA NOT IN ('D8')
         AND EA.IDOPERACAO <> 1301
         AND EA.IDEMPRESA IN ({{FILIAIS}})

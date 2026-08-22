@@ -32,3 +32,39 @@ export interface MetaSecao {
     meta_compra: number
     meta_reducao_estoque_pct: number
 }
+
+export interface PerdaFornecedorRow {
+    FORNECEDOR: string
+    QUANTIDADE: number
+    VALOR: number
+}
+
+export interface AvariaFabricanteRow {
+    FABRICANTE: string
+    QUANTIDADE: number
+    VALOR: number
+}
+
+export interface PedidoPendenteRow {
+    FORNECEDOR: string
+    QTD_PEDIDOS: number
+    VALOR_PENDENTE: number
+}
+
+export interface OperacionalData {
+    perdas: PerdaFornecedorRow[]
+    avaria: AvariaFabricanteRow[]
+    pedidosPendentes: PedidoPendenteRow[]
+}
+
+export interface TributacaoRow {
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    FABRICANTE: string | null
+    NCM: string | null
+    IDEMPRESA: number
+    UFORIGEM: string
+    PERICMSAI: number
+    PERICMSUBST: number
+    DESCRSITTRIBUTARIA: string | null
+}

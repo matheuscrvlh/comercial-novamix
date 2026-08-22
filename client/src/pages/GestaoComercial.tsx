@@ -4,11 +4,12 @@ import FiltersMenu from '../components/FiltersMenu'
 import FilialMultiFilter from '../components/FilialMultiFilter'
 import DateRangeFilter from '../components/DateRangeFilter'
 import Spinner from '../components/Spinner'
+import RankingList from '../components/RankingList'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatCurrency, formatPercent } from '../lib/format'
 import { getPresetRange } from '../lib/date'
-import type { VendaMetaSecaoRow } from '../types/comercial'
+import type { OperacionalData, VendaMetaSecaoRow } from '../types/comercial'
 
 function mesanoDe(data: string) {
     return data.replace(/-\d{2}$/, '').replace('-', '')
@@ -37,6 +38,12 @@ export default function GestaoComercial() {
         { inicio, fim, filiais: filiaisAtivas.join(','), mesano },
         habilitado
     )
+
+    const {
+        data: operacional,
+        loading: loadingOperacional,
+        erro: erroOperacional,
+    } = useApi<OperacionalData>('/comercial/operacional', { inicio, fim, filiais: filiaisAtivas.join(',') }, habilitado)
 
     const linhas = data ?? []
 
@@ -139,6 +146,37 @@ export default function GestaoComercial() {
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {erroOperacional && <p className="text-sm text-red-base mt-4">{erroOperacional}</p>}
+
+            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <RankingList
+                    titulo="Perdas por fornecedor"
+                    loading={loadingOperacional}
+                    itens={(operacional?.perdas ?? []).map((p) => ({
+                        label: p.FORNECEDOR,
+                        quantidade: p.QUANTIDADE,
+                        valor: p.VALOR,
+                    }))}
+                />
+                <RankingList
+                    titulo="Avaria de estoque por fabricante"
+                    loading={loadingOperacional}
+                    itens={(operacional?.avaria ?? []).map((a) => ({
+                        label: a.FABRICANTE,
+                        quantidade: a.QUANTIDADE,
+                        valor: a.VALOR,
+                    }))}
+                />
+                <RankingList
+                    titulo="Pedidos de compra pendentes"
+                    loading={loadingOperacional}
+                    itens={(operacional?.pedidosPendentes ?? []).map((p) => ({
+                        label: `${p.FORNECEDOR} (${p.QTD_PEDIDOS} pedido${p.QTD_PEDIDOS === 1 ? '' : 's'})`,
+                        valor: p.VALOR_PENDENTE,
+                    }))}
+                />
             </div>
         </PageShell>
     )
