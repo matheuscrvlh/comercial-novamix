@@ -8,8 +8,6 @@ services:
       - ./server/.env
     environment:
       SERVER_PORT: "3000"
-    volumes:
-      - server-data:/app/data
     restart: unless-stopped
 
   client:
@@ -21,6 +19,3 @@ services:
     ports:
       - "8090:80"
     restart: unless-stopped
-
-volumes:
-  server-data:

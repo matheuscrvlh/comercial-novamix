@@ -33,7 +33,7 @@ export async function getMetas(req: FastifyRequest, res: FastifyReply) {
 
     const idEmpresa = idempresa ? parseInt(idempresa, 10) : 100
 
-    res.send(listMetas(mesano, idEmpresa))
+    res.send(await listMetas(mesano, idEmpresa))
 }
 
 interface SalvarMetaBody {
@@ -56,7 +56,7 @@ export async function salvarMeta(req: FastifyRequest, res: FastifyReply) {
         return
     }
 
-    upsertMeta({
+    await upsertMeta({
         idempresa: body.idempresa,
         idsecao: body.idsecao,
         mesano: body.mesano,
@@ -77,7 +77,7 @@ export async function deletarMeta(req: FastifyRequest, res: FastifyReply) {
     if (!(await requireAdmin(req, res))) return
 
     const { id } = req.params as DeletarMetaParams
-    deleteMeta(parseInt(id, 10))
+    await deleteMeta(parseInt(id, 10))
 
     res.send({ ok: true })
 }

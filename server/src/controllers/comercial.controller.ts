@@ -116,7 +116,7 @@ export async function getVendaMetaSecao(req: FastifyRequest, res: FastifyReply) 
         await conn.close()
     }
 
-    const metas = listMetas(mesano, 100)
+    const metas = await listMetas(mesano, 100)
     const metasPorSecao = new Map(metas.map((m) => [m.idsecao, m]))
     const estoquePorSecao = new Map(estoque.map((e: any) => [e.IDSECAO, e.VALOR_ESTOQUE]))
 

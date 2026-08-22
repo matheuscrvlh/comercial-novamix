@@ -5,7 +5,7 @@ import cookie from '@fastify/cookie';
 import { connCiss } from './database/ciss.database.ts';
 import { comercialRoutes } from './routes/comercial.routes.ts';
 import { metasRoutes } from './routes/metas.routes.ts';
-import './database/app.database.ts';
+import './database/supabase.database.ts';
 
 const app = fastify();
 
@@ -20,6 +20,8 @@ if(!process.env.SERVER_PORT) {
     throw new Error('Erro ao encontrar JWT_SECRET no .env.')
 } else if (!process.env.CISS_DATABASE_URL) {
     throw new Error('Erro ao encontrar CISS_DATABASE_URL no .env.')
+} else if (!process.env.SUPABASE_DATABASE_URL) {
+    throw new Error('Erro ao encontrar SUPABASE_DATABASE_URL no .env.')
 };
 
 app.register(cookie);
@@ -29,7 +31,7 @@ app.register(metasRoutes);
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})
     console.log(`Servidor rodando em ${process.env.SERVER_PORT}`);
-    
+
     const conn = await connCiss()
     await conn.query(`SELECT CURRENT TIMESTAMP FROM SYSIBM.SYSDUMMY1`)
     console.log(`Banco CISS conectado.`);

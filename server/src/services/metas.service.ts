@@ -1,4 +1,4 @@
-import { appDb } from '../database/app.database'
+import { supabasePool } from '../database/supabase.database'
 
 export interface MetaSecao {
     id: number
@@ -11,10 +11,12 @@ export interface MetaSecao {
     meta_reducao_estoque_pct: number
 }
 
-export function listMetas(mesano: string, idempresa: number): MetaSecao[] {
-    return appDb
-        .prepare('SELECT * FROM metas_secao WHERE mesano = ? AND idempresa = ? ORDER BY idsecao')
-        .all(mesano, idempresa) as MetaSecao[]
+export async function listMetas(mesano: string, idempresa: number): Promise<MetaSecao[]> {
+    const { rows } = await supabasePool.query(
+        'SELECT * FROM comercial.metas_secao WHERE mesano = $1 AND idempresa = $2 ORDER BY idsecao',
+        [mesano, idempresa]
+    )
+    return rows
 }
 
 export interface UpsertMetaInput {
@@ -27,21 +29,28 @@ export interface UpsertMetaInput {
     meta_reducao_estoque_pct: number
 }
 
-export function upsertMeta(input: UpsertMetaInput) {
-    appDb
-        .prepare(
-            `INSERT INTO metas_secao (idempresa, idsecao, mesano, meta_venda, meta_margem_pct, meta_compra, meta_reducao_estoque_pct, updated_at)
-             VALUES (@idempresa, @idsecao, @mesano, @meta_venda, @meta_margem_pct, @meta_compra, @meta_reducao_estoque_pct, datetime('now'))
-             ON CONFLICT(idempresa, idsecao, mesano) DO UPDATE SET
-                meta_venda = excluded.meta_venda,
-                meta_margem_pct = excluded.meta_margem_pct,
-                meta_compra = excluded.meta_compra,
-                meta_reducao_estoque_pct = excluded.meta_reducao_estoque_pct,
-                updated_at = datetime('now')`
-        )
-        .run(input)
+export async function upsertMeta(input: UpsertMetaInput) {
+    await supabasePool.query(
+        `INSERT INTO comercial.metas_secao (idempresa, idsecao, mesano, meta_venda, meta_margem_pct, meta_compra, meta_reducao_estoque_pct, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+         ON CONFLICT (idempresa, idsecao, mesano) DO UPDATE SET
+            meta_venda = excluded.meta_venda,
+            meta_margem_pct = excluded.meta_margem_pct,
+            meta_compra = excluded.meta_compra,
+            meta_reducao_estoque_pct = excluded.meta_reducao_estoque_pct,
+            updated_at = now()`,
+        [
+            input.idempresa,
+            input.idsecao,
+            input.mesano,
+            input.meta_venda,
+            input.meta_margem_pct,
+            input.meta_compra,
+            input.meta_reducao_estoque_pct,
+        ]
+    )
 }
 
-export function deleteMeta(id: number) {
-    appDb.prepare('DELETE FROM metas_secao WHERE id = ?').run(id)
+export async function deleteMeta(id: number) {
+    await supabasePool.query('DELETE FROM comercial.metas_secao WHERE id = $1', [id])
 }
