@@ -15,15 +15,29 @@ const linkInactiveClass =
     'text-gray-text hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
 const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-text-muted/40'
 
-const PAGINAS_ADMIN: { to: string; label: string }[] = [
-    { to: '/gestao-comercial', label: 'Gestão Comercial' },
-    { to: '/estoque-transferencias', label: 'Estoque & Transferências' },
-    { to: '/comparativo-fabricante', label: 'Comparativo por Fabricante' },
-    { to: '/analise-margem', label: 'Análise de Margem' },
-    { to: '/ticket-operador', label: 'Ticket por Operador' },
-    { to: '/metas', label: 'Metas por Seção' },
-    { to: '/tributacao', label: 'Tributação' },
+type Pagina = { to: string; label: string }
+type GrupoPaginas = { titulo: string; paginas: Pagina[] }
+
+const GRUPOS_ADMIN: GrupoPaginas[] = [
+    {
+        titulo: 'Vendas & Margem',
+        paginas: [
+            { to: '/gestao-comercial', label: 'Gestão Comercial' },
+            { to: '/comparativo-fabricante', label: 'Comparativo por Fabricante' },
+            { to: '/analise-margem', label: 'Análise de Margem' },
+            { to: '/ticket-operador', label: 'Ticket por Operador' },
+        ],
+    },
+    {
+        titulo: 'Estoque & Fiscal',
+        paginas: [
+            { to: '/estoque-transferencias', label: 'Estoque & Transferências' },
+            { to: '/tributacao', label: 'Tributação' },
+        ],
+    },
 ]
+
+const PAGINA_CONFIGURACOES: Pagina = { to: '/configuracoes', label: 'Configurações' }
 
 export default function Sidebar({ isAdmin }: SidebarProps) {
     const [isOpen, setIsOpen] = useState(false)
@@ -42,6 +56,28 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
 
     function fechar() {
         setIsOpen(false)
+    }
+
+    function renderPagina(pagina: Pagina) {
+        return isAdmin ? (
+            <NavLink
+                key={pagina.to}
+                to={pagina.to}
+                onClick={fechar}
+                className={({ isActive }) => `${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`}
+            >
+                {pagina.label}
+            </NavLink>
+        ) : (
+            <span
+                key={pagina.to}
+                title='Disponível apenas para administradores'
+                aria-disabled='true'
+                className={`${linkBaseClass} ${linkDisabledClass}`}
+            >
+                {pagina.label}
+            </span>
+        )
     }
 
     return (
@@ -69,7 +105,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
             >
                 <Logo compact />
 
-                <nav className='mt-8 flex flex-1 flex-col gap-2 overflow-y-auto px-4'>
+                <nav className='mt-4 flex flex-1 flex-col gap-5 overflow-y-auto px-4'>
                     <NavLink
                         to='/'
                         end
@@ -79,29 +115,18 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
                         Dashboard
                     </NavLink>
 
-                    {PAGINAS_ADMIN.map((pagina) =>
-                        isAdmin ? (
-                            <NavLink
-                                key={pagina.to}
-                                to={pagina.to}
-                                onClick={fechar}
-                                className={({ isActive }) =>
-                                    `${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`
-                                }
-                            >
-                                {pagina.label}
-                            </NavLink>
-                        ) : (
-                            <span
-                                key={pagina.to}
-                                title='Disponível apenas para administradores'
-                                aria-disabled='true'
-                                className={`${linkBaseClass} ${linkDisabledClass}`}
-                            >
-                                {pagina.label}
+                    {GRUPOS_ADMIN.map((grupo) => (
+                        <div key={grupo.titulo} className='flex flex-col gap-2'>
+                            <span className='px-1 text-xs font-semibold uppercase tracking-wide text-gray-dark/70 dark:text-dark-text-muted/70'>
+                                {grupo.titulo}
                             </span>
-                        )
-                    )}
+                            {grupo.paginas.map(renderPagina)}
+                        </div>
+                    ))}
+
+                    <div className='mt-auto flex flex-col gap-2 pt-2'>
+                        {renderPagina(PAGINA_CONFIGURACOES)}
+                    </div>
                 </nav>
 
                 <a

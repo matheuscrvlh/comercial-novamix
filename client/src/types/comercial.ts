@@ -4,6 +4,18 @@ export interface MeInfo {
     isAdmin: boolean
 }
 
+export interface DashboardResumo {
+    vendaHoje: number
+    lucroHoje: number
+    compraHoje: number
+    margemHoje: number
+    estoqueNegativoCount: number
+    margemExcecoesCount: number
+    pedidosPendentesValor: number
+    pedidosPendentesCount: number
+    perdasValor: number
+}
+
 export interface Secao {
     IDSECAO: number
     DESCRSECAO: string

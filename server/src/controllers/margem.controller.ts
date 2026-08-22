@@ -47,9 +47,9 @@ function resolveFiliaisSelecionadas(req: FastifyRequest, filiaisLiberadas: numbe
     return selecionadas.length > 0 ? selecionadas : filiaisLiberadas
 }
 
-type FlagMargem = 'ACIMA_40' | 'ABAIXO_MENOS15' | 'MUITO_ABAIXO_META' | 'ZERO'
+export type FlagMargem = 'ACIMA_40' | 'ABAIXO_MENOS15' | 'MUITO_ABAIXO_META' | 'ZERO'
 
-interface ProdutoMargem {
+export interface ProdutoMargem {
     IDSECAO: number
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
@@ -60,24 +60,13 @@ interface ProdutoMargem {
     FLAGS: FlagMargem[]
 }
 
-export async function getMargemExcecoes(req: FastifyRequest, res: FastifyReply) {
-    const filiaisLiberadas = await resolveFiliais(req, res)
-    if (!filiaisLiberadas) return
-
-    const { inicio, fim, mesano } = req.query as MargemQuery
-
-    if (!inicio || !fim) {
-        res.code(400).send({ error: 'Informe os parametros inicio e fim (YYYY-MM-DD).' })
-        return
-    }
-
-    if (!mesano || !/^\d{6}$/.test(mesano)) {
-        res.code(400).send({ error: 'Informe o parametro mesano (AAAAMM).' })
-        return
-    }
-
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const sql = loadQueryComercial('venda_margem_produto.sql').replaceAll('{{FILIAIS}}', filiais.join(','))
+export async function buscarExcecoesMargem(
+    filiaisStr: string,
+    inicio: string,
+    fim: string,
+    mesano: string
+): Promise<ProdutoMargem[]> {
+    const sql = loadQueryComercial('venda_margem_produto.sql').replaceAll('{{FILIAIS}}', filiaisStr)
 
     const conn = await connCiss()
     let produtos: any[] = []
@@ -120,6 +109,28 @@ export async function getMargemExcecoes(req: FastifyRequest, res: FastifyReply) 
     }
 
     excecoes.sort((a, b) => a.LUCRO - b.LUCRO)
+
+    return excecoes
+}
+
+export async function getMargemExcecoes(req: FastifyRequest, res: FastifyReply) {
+    const filiaisLiberadas = await resolveFiliais(req, res)
+    if (!filiaisLiberadas) return
+
+    const { inicio, fim, mesano } = req.query as MargemQuery
+
+    if (!inicio || !fim) {
+        res.code(400).send({ error: 'Informe os parametros inicio e fim (YYYY-MM-DD).' })
+        return
+    }
+
+    if (!mesano || !/^\d{6}$/.test(mesano)) {
+        res.code(400).send({ error: 'Informe o parametro mesano (AAAAMM).' })
+        return
+    }
+
+    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const excecoes = await buscarExcecoesMargem(filiais.join(','), inicio, fim, mesano)
 
     res.send(excecoes.slice(0, 200))
 }

@@ -14,7 +14,7 @@ export default function App() {
       <Routes>
         <Route path='/' element={<Home />}/>
         <Route path='/gestao-comercial' element={<GestaoComercial />}/>
-        <Route path='/metas' element={<Metas />}/>
+        <Route path='/configuracoes' element={<Metas />}/>
         <Route path='/tributacao' element={<Tributacao />}/>
         <Route path='/estoque-transferencias' element={<EstoqueTransferencias />}/>
         <Route path='/comparativo-fabricante' element={<ComparativoFabricante />}/>

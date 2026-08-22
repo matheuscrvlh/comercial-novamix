@@ -94,8 +94,8 @@ export default function Metas() {
             loadingMe={loadingMe}
             meError={meError}
             autorizado={me?.isAdmin ?? false}
-            titulo="Metas por Seção"
-            subtitulo="Cadastro mensal de metas de venda, margem, compra e redução de estoque por seção."
+            titulo="Configurações"
+            subtitulo="Metas mensais de venda, margem, compra e redução de estoque por seção."
             filtros={
                 <div className="mb-8 flex flex-col gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
