@@ -1,9 +1,9 @@
 services:
   server:
     build: ./server
-    container_name: financeiro-server
+    container_name: comercial-server
     ports:
-      - "3005:3000"
+      - "3010:3000"
     env_file:
       - ./server/.env
     environment:
@@ -15,7 +15,7 @@ services:
       context: ./client
       args:
         VITE_API_URL: ${VITE_API_URL:?Defina a variável VITE_API_URL antes de buildar}
-    container_name: financeiro-client
+    container_name: comercial-client
     ports:
-      - "8085:80"
+      - "8090:80"
     restart: unless-stopped

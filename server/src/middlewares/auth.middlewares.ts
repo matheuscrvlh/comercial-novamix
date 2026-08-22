@@ -31,14 +31,14 @@ export async function authenticate(req:FastifyRequest, res:FastifyReply) {
 export async function checkPermission(req:FastifyRequest, res:FastifyReply) {
     const { permissions } = req.user
     
-    const module = permissions.some(p => p.module === 'financeiro')
+    const module = permissions.some(p => p.module === 'comercial')
 
     if(!module) {
         res.code(401).send({ error: 'Módulo não liberado para esse usuário.'})
         return
     }
 
-    const permission = permissions.find(p => p.module === 'financeiro').access
+    const permission = permissions.find(p => p.module === 'comercial').access
     
     return permission
 }

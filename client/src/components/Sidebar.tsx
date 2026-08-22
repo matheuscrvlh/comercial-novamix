@@ -15,14 +15,7 @@ const linkInactiveClass =
     'text-gray-text hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
 const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-text-muted/40'
 
-const PAGINAS_ADMIN = [
-    { to: '/resultado', label: 'Resultado (DRE)' },
-    { to: '/balanco', label: 'Balanço' },
-    { to: '/despesas', label: 'Despesas' },
-    { to: '/contas-a-pagar', label: 'Contas a pagar' },
-    { to: '/contas-a-receber', label: 'Contas a receber' },
-    { to: '/conciliacoes', label: 'Conciliações' },
-]
+const PAGINAS_ADMIN: { to: string; label: string }[] = []
 
 export default function Sidebar({ isAdmin }: SidebarProps) {
     const [isOpen, setIsOpen] = useState(false)
