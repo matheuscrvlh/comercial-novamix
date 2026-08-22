@@ -1,10 +1,13 @@
 import Sidebar from '../components/Sidebar'
 import Footer from '../components/Footer'
+import { useMe } from '../hooks/useMe'
 
 export default function Home() {
+    const { me } = useMe()
+
     return (
         <div className='flex w-full min-h-screen bg-gray dark:bg-dark-bg'>
-            <Sidebar isAdmin={false} />
+            <Sidebar isAdmin={me?.isAdmin ?? false} />
 
             <main className='flex-1 min-w-0 flex flex-col lg:ml-64'>
                 <section className='flex-1 w-full max-w-6xl mx-auto px-6 pt-20 pb-10 lg:pt-10'>
@@ -12,7 +15,7 @@ export default function Home() {
                         Comercial Novamix
                     </h1>
                     <p className='text-sm text-gray-dark dark:text-dark-text-muted mb-6'>
-                        Módulo em construção.
+                        Selecione uma tela no menu ao lado.
                     </p>
                 </section>
 

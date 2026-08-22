@@ -3,11 +3,14 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import { connCiss } from './database/ciss.database.ts';
+import { comercialRoutes } from './routes/comercial.routes.ts';
+import { metasRoutes } from './routes/metas.routes.ts';
+import './database/app.database.ts';
 
 const app = fastify();
 
 await app.register(cors, {
-    origin: ['https://hub.lojanovamix.com.br', 'http://localhost:5173'],
+    origin: ['https://hub.lojanovamix.com.br', 'https://comercial.lojanovamix.com.br', 'http://localhost:5173'],
     credentials: true
 });
 
@@ -20,6 +23,8 @@ if(!process.env.SERVER_PORT) {
 };
 
 app.register(cookie);
+app.register(comercialRoutes);
+app.register(metasRoutes);
 
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})
