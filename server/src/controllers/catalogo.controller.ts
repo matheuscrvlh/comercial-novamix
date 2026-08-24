@@ -34,8 +34,8 @@ export async function getCatalogo(req: FastifyRequest, res: FastifyReply) {
     const params: unknown[] = []
 
     if (buscaLimpa.length >= 3) {
-        condicoes.push('UPPER(PV.DESCRICAOPRODUTO) LIKE UPPER(?)')
-        params.push(`%${buscaLimpa}%`)
+        condicoes.push('(UPPER(PV.DESCRICAOPRODUTO) LIKE UPPER(?) OR CAST(PV.IDSUBPRODUTO AS VARCHAR(20)) LIKE ?)')
+        params.push(`%${buscaLimpa}%`, `${buscaLimpa}%`)
     }
 
     if (idsecaoNum) {

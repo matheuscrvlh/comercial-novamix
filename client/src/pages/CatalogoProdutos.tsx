@@ -40,6 +40,16 @@ export default function CatalogoProdutos() {
         setBusca(campo)
     }
 
+    function selecionarSecao(valor: string) {
+        setIdsecao(valor)
+        setBusca(campo)
+    }
+
+    function selecionarStatus(valor: Status) {
+        setStatus(valor)
+        setBusca(campo)
+    }
+
     return (
         <PageShell
             isAdmin={me?.isAdmin ?? false}
@@ -58,7 +68,7 @@ export default function CatalogoProdutos() {
                             type="text"
                             value={campo}
                             onChange={(e) => setCampo(e.target.value)}
-                            placeholder="Ex: chocolate tablete talento"
+                            placeholder="Nome ou código do produto"
                             className="w-72 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         />
                     </div>
@@ -68,7 +78,7 @@ export default function CatalogoProdutos() {
                         </span>
                         <select
                             value={idsecao}
-                            onChange={(e) => setIdsecao(e.target.value)}
+                            onChange={(e) => selecionarSecao(e.target.value)}
                             className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="">Todas</option>
@@ -85,7 +95,7 @@ export default function CatalogoProdutos() {
                         </span>
                         <select
                             value={status}
-                            onChange={(e) => setStatus(e.target.value as Status)}
+                            onChange={(e) => selecionarStatus(e.target.value as Status)}
                             className="w-36 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="ativo">Ativos</option>
@@ -167,7 +177,10 @@ export default function CatalogoProdutos() {
                                     key={row.IDSUBPRODUTO}
                                     className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
                                 >
-                                    <td className="px-4 py-2.5 font-medium">{row.DESCRICAOPRODUTO}</td>
+                                    <td className="px-4 py-2.5 font-medium">
+                                        <span className="text-gray-dark dark:text-dark-text-muted">{row.IDSUBPRODUTO}</span> -{' '}
+                                        {row.DESCRICAOPRODUTO}
+                                    </td>
                                     <td className="px-4 py-2.5 text-gray-dark dark:text-dark-text-muted">
                                         {row.FABRICANTE ?? '—'}
                                     </td>
