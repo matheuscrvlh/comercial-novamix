@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkBranch, checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
+import { comFiltroEcommerce, resolveFiliaisFisicas } from '../utils/filiais'
 
 const ADMIN_ACCESS = 'admin'
 
@@ -28,18 +29,20 @@ async function resolveFiliais(req: FastifyRequest, res: FastifyReply) {
 }
 
 function resolveFiliaisSelecionadas(req: FastifyRequest, filiaisLiberadas: number[]) {
+    const liberadasComEcommerce = comFiltroEcommerce(filiaisLiberadas)
+
     const { filiais } = req.query as ResumoQuery
 
-    if (!filiais) return filiaisLiberadas
+    if (!filiais) return liberadasComEcommerce
 
     const solicitadas = filiais
         .split(',')
         .map((id) => parseInt(id, 10))
         .filter((id) => !Number.isNaN(id))
 
-    const selecionadas = filiaisLiberadas.filter((id) => solicitadas.includes(id))
+    const selecionadas = liberadasComEcommerce.filter((id) => solicitadas.includes(id))
 
-    return selecionadas.length > 0 ? selecionadas : filiaisLiberadas
+    return selecionadas.length > 0 ? selecionadas : liberadasComEcommerce
 }
 
 export async function getEstoqueResumo(req: FastifyRequest, res: FastifyReply) {
@@ -55,8 +58,8 @@ export async function getEstoqueResumo(req: FastifyRequest, res: FastifyReply) {
 
     const diasParado = dias ? parseInt(dias, 10) : 60
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const filiaisStr = filiais.join(',')
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
 
     const transferenciasSql = loadQueryComercial('transferencias_loja.sql').replaceAll('{{FILIAIS}}', filiaisStr)
     const negativoSql = loadQueryComercial('estoque_negativo.sql').replaceAll('{{FILIAIS}}', filiaisStr)

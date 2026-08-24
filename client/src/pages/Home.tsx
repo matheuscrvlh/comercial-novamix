@@ -10,6 +10,7 @@ import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatCurrency, formatNumber, formatPercent } from '../lib/format'
 import { getPresetRange } from '../lib/date'
+import { comFiltroEcommerce } from '../constants/filiais'
 import type { DashboardResumo } from '../types/comercial'
 
 function mesanoDe(data: string) {
@@ -65,7 +66,7 @@ export default function Home() {
     const [fim, setFim] = useState(() => getPresetRange('hoje').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
 
-    const branchesDisponiveis = me?.branches ?? []
+    const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
     const mesano = mesanoDe(fim)
 

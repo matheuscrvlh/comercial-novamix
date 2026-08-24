@@ -8,6 +8,7 @@ import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatNumber, formatPercent } from '../lib/format'
 import { getPresetRange } from '../lib/date'
+import { comFiltroEcommerce } from '../constants/filiais'
 import type { TicketOperadorRow } from '../types/comercial'
 
 export default function TicketOperador() {
@@ -17,7 +18,7 @@ export default function TicketOperador() {
     const [fim, setFim] = useState(() => getPresetRange('hoje').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
 
-    const branchesDisponiveis = me?.branches ?? []
+    const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
 
     const habilitado = me !== null && me.isAdmin
@@ -37,7 +38,7 @@ export default function TicketOperador() {
             meError={meError}
             autorizado={me?.isAdmin ?? false}
             titulo="Ticket por Operador"
-            subtitulo="Cupons com lucro positivo x negativo, por operador de caixa."
+            subtitulo="Cupons com cliente identificado no Clube Panelinha (positivo) x não identificado (negativo), por operador de caixa."
             filtros={
                 <FiltersMenu>
                     <div className="flex flex-col gap-2">

@@ -3,6 +3,7 @@ import { checkBranch, checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
 import { listMetas } from '../services/metas.service'
+import { comFiltroEcommerce, condicaoEcommerce, condicaoEcommerceOperador, resolveFiliaisFisicas } from '../utils/filiais'
 
 const ADMIN_ACCESS = 'admin'
 
@@ -28,19 +29,25 @@ async function resolveFiliais(req: FastifyRequest, res: FastifyReply) {
     return branches
 }
 
+/**
+ * Retorna a lista de filiais "virtuais" selecionadas (pode incluir 99 = E-commerce,
+ * que nao existe fisicamente no banco - ver server/src/utils/filiais.ts).
+ */
 function resolveFiliaisSelecionadas(req: FastifyRequest, filiaisLiberadas: number[]) {
+    const liberadasComEcommerce = comFiltroEcommerce(filiaisLiberadas)
+
     const { filiais } = req.query as PeriodoQuery
 
-    if (!filiais) return filiaisLiberadas
+    if (!filiais) return liberadasComEcommerce
 
     const solicitadas = filiais
         .split(',')
         .map((id) => parseInt(id, 10))
         .filter((id) => !Number.isNaN(id))
 
-    const selecionadas = filiaisLiberadas.filter((id) => solicitadas.includes(id))
+    const selecionadas = liberadasComEcommerce.filter((id) => solicitadas.includes(id))
 
-    return selecionadas.length > 0 ? selecionadas : filiaisLiberadas
+    return selecionadas.length > 0 ? selecionadas : liberadasComEcommerce
 }
 
 function resolvePeriodo(req: FastifyRequest, res: FastifyReply) {
@@ -98,10 +105,13 @@ export async function getVendaMetaSecao(req: FastifyRequest, res: FastifyReply) 
     const mesano = resolveMesano(req, res)
     if (!mesano) return
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const filiaisStr = filiais.join(',')
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
+    const ecommerce = condicaoEcommerce(virtuais)
 
-    const vendaSql = loadQueryComercial('venda_secao.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const vendaSql = loadQueryComercial('venda_secao.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replaceAll('{{ECOMMERCE}}', ecommerce)
     const estoqueSql = loadQueryComercial('estoque_secao.sql').replaceAll('{{FILIAIS}}', filiaisStr)
 
     const conn = await connCiss()
@@ -161,8 +171,10 @@ export async function getTicketOperador(req: FastifyRequest, res: FastifyReply) 
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const sql = loadQueryComercial('ticket_operador.sql').replaceAll('{{FILIAIS}}', filiais.join(','))
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const sql = loadQueryComercial('ticket_operador.sql')
+        .replaceAll('{{FILIAIS}}', resolveFiliaisFisicas(virtuais).join(','))
+        .replaceAll('{{ECOMMERCE}}', condicaoEcommerceOperador(virtuais))
 
     const conn = await connCiss()
     try {
@@ -211,10 +223,13 @@ export async function getComparativoFabricante(req: FastifyRequest, res: Fastify
         return
     }
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const filiaisStr = filiais.join(',')
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
+    const ecommerce = condicaoEcommerce(virtuais)
 
-    const vendaSql = loadQueryComercial('venda_produto_fabricante.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const vendaSql = loadQueryComercial('venda_produto_fabricante.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replaceAll('{{ECOMMERCE}}', ecommerce)
     const estoqueSql = loadQueryComercial('estoque_produto_fabricante.sql').replaceAll('{{FILIAIS}}', filiaisStr)
 
     const periodoAnterior = { inicio: deslocarAno(periodo.inicio, 1), fim: deslocarAno(periodo.fim, 1) }
@@ -262,8 +277,8 @@ export async function getOperacional(req: FastifyRequest, res: FastifyReply) {
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const filiaisStr = filiais.join(',')
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
 
     const perdasSql = loadQueryComercial('perdas_fornecedor.sql').replaceAll('{{FILIAIS}}', filiaisStr)
     const avariaSql = loadQueryComercial('avaria_estoque.sql').replaceAll('{{FILIAIS}}', filiaisStr)
@@ -320,8 +335,8 @@ export async function getVendaSecaoLoja(req: FastifyRequest, res: FastifyReply) 
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const sql = loadQueryComercial('venda_secao_loja.sql').replaceAll('{{FILIAIS}}', filiais.join(','))
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const sql = loadQueryComercial('venda_secao_loja.sql').replaceAll('{{FILIAIS}}', resolveFiliaisFisicas(virtuais).join(','))
 
     const conn = await connCiss()
     try {

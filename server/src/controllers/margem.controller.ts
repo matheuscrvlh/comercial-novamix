@@ -3,6 +3,7 @@ import { checkBranch, checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
 import { listMetas } from '../services/metas.service'
+import { comFiltroEcommerce, condicaoEcommerce, resolveFiliaisFisicas } from '../utils/filiais'
 
 const ADMIN_ACCESS = 'admin'
 
@@ -33,18 +34,20 @@ async function resolveFiliais(req: FastifyRequest, res: FastifyReply) {
 }
 
 function resolveFiliaisSelecionadas(req: FastifyRequest, filiaisLiberadas: number[]) {
+    const liberadasComEcommerce = comFiltroEcommerce(filiaisLiberadas)
+
     const { filiais } = req.query as MargemQuery
 
-    if (!filiais) return filiaisLiberadas
+    if (!filiais) return liberadasComEcommerce
 
     const solicitadas = filiais
         .split(',')
         .map((id) => parseInt(id, 10))
         .filter((id) => !Number.isNaN(id))
 
-    const selecionadas = filiaisLiberadas.filter((id) => solicitadas.includes(id))
+    const selecionadas = liberadasComEcommerce.filter((id) => solicitadas.includes(id))
 
-    return selecionadas.length > 0 ? selecionadas : filiaisLiberadas
+    return selecionadas.length > 0 ? selecionadas : liberadasComEcommerce
 }
 
 export type FlagMargem = 'ACIMA_40' | 'ABAIXO_MENOS15' | 'MUITO_ABAIXO_META' | 'ZERO'
@@ -61,12 +64,14 @@ export interface ProdutoMargem {
 }
 
 export async function buscarExcecoesMargem(
-    filiaisStr: string,
+    virtuais: number[],
     inicio: string,
     fim: string,
     mesano: string
 ): Promise<ProdutoMargem[]> {
-    const sql = loadQueryComercial('venda_margem_produto.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const sql = loadQueryComercial('venda_margem_produto.sql')
+        .replaceAll('{{FILIAIS}}', resolveFiliaisFisicas(virtuais).join(','))
+        .replaceAll('{{ECOMMERCE}}', condicaoEcommerce(virtuais))
 
     const conn = await connCiss()
     let produtos: any[] = []
@@ -129,8 +134,8 @@ export async function getMargemExcecoes(req: FastifyRequest, res: FastifyReply) 
         return
     }
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const excecoes = await buscarExcecoesMargem(filiais.join(','), inicio, fim, mesano)
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const excecoes = await buscarExcecoesMargem(virtuais, inicio, fim, mesano)
 
     res.send(excecoes.slice(0, 200))
 }

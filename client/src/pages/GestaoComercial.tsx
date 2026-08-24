@@ -9,6 +9,7 @@ import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatCurrency, formatPercent } from '../lib/format'
 import { getPresetRange } from '../lib/date'
+import { comFiltroEcommerce } from '../constants/filiais'
 import type { OperacionalData, VendaMetaSecaoRow } from '../types/comercial'
 
 function mesanoDe(data: string) {
@@ -27,7 +28,7 @@ export default function GestaoComercial() {
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
 
-    const branchesDisponiveis = me?.branches ?? []
+    const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
     const mesano = mesanoDe(fim)
 

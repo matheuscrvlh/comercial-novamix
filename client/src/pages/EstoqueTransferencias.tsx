@@ -8,6 +8,7 @@ import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatCurrency, formatDate } from '../lib/format'
 import { getPresetRange } from '../lib/date'
+import { comFiltroEcommerce } from '../constants/filiais'
 import type { EstoqueResumoData } from '../types/comercial'
 
 export default function EstoqueTransferencias() {
@@ -17,7 +18,7 @@ export default function EstoqueTransferencias() {
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
 
-    const branchesDisponiveis = me?.branches ?? []
+    const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
 
     const habilitado = me !== null && me.isAdmin

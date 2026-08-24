@@ -3,6 +3,7 @@ import { checkBranch, checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
 import { buscarExcecoesMargem } from './margem.controller'
+import { comFiltroEcommerce, condicaoEcommerce, resolveFiliaisFisicas } from '../utils/filiais'
 
 interface ResumoQuery {
     inicio?: string
@@ -26,18 +27,20 @@ async function resolveFiliais(req: FastifyRequest, res: FastifyReply) {
 }
 
 function resolveFiliaisSelecionadas(req: FastifyRequest, filiaisLiberadas: number[]) {
+    const liberadasComEcommerce = comFiltroEcommerce(filiaisLiberadas)
+
     const { filiais } = req.query as ResumoQuery
 
-    if (!filiais) return filiaisLiberadas
+    if (!filiais) return liberadasComEcommerce
 
     const solicitadas = filiais
         .split(',')
         .map((id) => parseInt(id, 10))
         .filter((id) => !Number.isNaN(id))
 
-    const selecionadas = filiaisLiberadas.filter((id) => solicitadas.includes(id))
+    const selecionadas = liberadasComEcommerce.filter((id) => solicitadas.includes(id))
 
-    return selecionadas.length > 0 ? selecionadas : filiaisLiberadas
+    return selecionadas.length > 0 ? selecionadas : liberadasComEcommerce
 }
 
 export async function getDashboardResumo(req: FastifyRequest, res: FastifyReply) {
@@ -56,10 +59,12 @@ export async function getDashboardResumo(req: FastifyRequest, res: FastifyReply)
         return
     }
 
-    const filiais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
-    const filiaisStr = filiais.join(',')
+    const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
+    const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
 
-    const vendaTotalSql = loadQueryComercial('venda_total.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const vendaTotalSql = loadQueryComercial('venda_total.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replaceAll('{{ECOMMERCE}}', condicaoEcommerce(virtuais))
     const estoqueNegativoSql = loadQueryComercial('estoque_negativo.sql').replaceAll('{{FILIAIS}}', filiaisStr)
     const pedidosPendentesSql = loadQueryComercial('pedidos_pendentes.sql').replaceAll('{{FILIAIS}}', filiaisStr)
     const perdasSql = loadQueryComercial('perdas_fornecedor.sql').replaceAll('{{FILIAIS}}', filiaisStr)
@@ -80,7 +85,7 @@ export async function getDashboardResumo(req: FastifyRequest, res: FastifyReply)
         await conn.close()
     }
 
-    const excecoesMargem = await buscarExcecoesMargem(filiaisStr, inicio, fim, mesano)
+    const excecoesMargem = await buscarExcecoesMargem(virtuais, inicio, fim, mesano)
 
     const vendaHoje = Number(vendaTotal[0]?.VENDA_TOTAL) || 0
     const lucroHoje = Number(vendaTotal[0]?.LUCRO_TOTAL) || 0
