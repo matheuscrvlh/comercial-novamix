@@ -33,6 +33,7 @@ const GRUPOS_ADMIN: GrupoPaginas[] = [
         paginas: [
             { to: '/estoque-transferencias', label: 'Estoque & Transferências' },
             { to: '/tributacao', label: 'Tributação' },
+            { to: '/catalogo-produtos', label: 'Catálogo de Produtos' },
         ],
     },
 ]

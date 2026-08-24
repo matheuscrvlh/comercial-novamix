@@ -23,6 +23,7 @@ const PAGINAS = [
     { to: '/analise-margem', titulo: 'Análise de Margem', descricao: 'Produtos com margem fora do esperado no período.' },
     { to: '/ticket-operador', titulo: 'Ticket por Operador', descricao: 'Cupons com lucro positivo x negativo por operador.' },
     { to: '/tributacao', titulo: 'Tributação', descricao: 'Consulta de ICMS por produto.' },
+    { to: '/catalogo-produtos', titulo: 'Catálogo de Produtos', descricao: 'Hierarquia mercadológica e status ativo/inativo por produto.' },
     { to: '/configuracoes', titulo: 'Configurações', descricao: 'Metas mensais de venda, margem e compra por seção.' },
 ]
 

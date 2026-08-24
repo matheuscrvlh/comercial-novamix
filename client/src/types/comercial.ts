@@ -115,6 +115,25 @@ export interface Fabricante {
     FABRICANTE: string
 }
 
+export interface CatalogoProdutoRow {
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    FABRICANTE: string | null
+    DESCRDIVISAO: string | null
+    DESCRSECAO: string | null
+    DESCRGRUPO: string | null
+    DESCRSUBGRUPO: string | null
+    FLAGINATIVO: 'T' | 'F'
+}
+
+export interface ResumoMercadologicoRow {
+    IDSECAO: number
+    DESCRSECAO: string
+    ATIVOS: number
+    INATIVOS: number
+    TOTAL: number
+}
+
 export type FlagMargem = 'ACIMA_40' | 'ABAIXO_MENOS15' | 'MUITO_ABAIXO_META' | 'ZERO'
 
 export interface ProdutoMargemRow {
