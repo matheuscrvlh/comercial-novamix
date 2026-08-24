@@ -127,8 +127,14 @@ export interface CatalogoProdutoRow {
 }
 
 export interface ResumoMercadologicoRow {
-    IDSECAO: number
-    DESCRSECAO: string
+    IDDIVISAO: number | null
+    DESCRDIVISAO: string | null
+    IDSECAO: number | null
+    DESCRSECAO: string | null
+    IDGRUPO: number | null
+    DESCRGRUPO: string | null
+    IDSUBGRUPO: number | null
+    DESCRSUBGRUPO: string | null
     ATIVOS: number
     INATIVOS: number
     TOTAL: number

@@ -7,7 +7,10 @@ const ADMIN_ACCESS = 'admin'
 
 interface CatalogoQuery {
     busca?: string
+    iddivisao?: string
     idsecao?: string
+    idgrupo?: string
+    idsubgrupo?: string
     status?: 'ativo' | 'inativo' | 'todos'
 }
 
@@ -20,13 +23,16 @@ export async function getCatalogo(req: FastifyRequest, res: FastifyReply) {
         return
     }
 
-    const { busca, idsecao, status } = req.query as CatalogoQuery
+    const { busca, iddivisao, idsecao, idgrupo, idsubgrupo, status } = req.query as CatalogoQuery
 
     const buscaLimpa = busca?.trim() ?? ''
+    const iddivisaoNum = iddivisao ? parseInt(iddivisao, 10) : null
     const idsecaoNum = idsecao ? parseInt(idsecao, 10) : null
+    const idgrupoNum = idgrupo ? parseInt(idgrupo, 10) : null
+    const idsubgrupoNum = idsubgrupo ? parseInt(idsubgrupo, 10) : null
 
-    if (buscaLimpa.length < 3 && !idsecaoNum) {
-        res.code(400).send({ error: 'Informe ao menos 3 caracteres de busca ou selecione uma seção.' })
+    if (buscaLimpa.length < 3 && !iddivisaoNum && !idsecaoNum && !idgrupoNum && !idsubgrupoNum) {
+        res.code(400).send({ error: 'Informe ao menos 3 caracteres de busca ou selecione um filtro de hierarquia.' })
         return
     }
 
@@ -38,9 +44,24 @@ export async function getCatalogo(req: FastifyRequest, res: FastifyReply) {
         params.push(`%${buscaLimpa}%`, `${buscaLimpa}%`)
     }
 
+    if (iddivisaoNum) {
+        condicoes.push('PV.IDDIVISAO = ?')
+        params.push(iddivisaoNum)
+    }
+
     if (idsecaoNum) {
         condicoes.push('PV.IDSECAO = ?')
         params.push(idsecaoNum)
+    }
+
+    if (idgrupoNum) {
+        condicoes.push('PV.IDGRUPO = ?')
+        params.push(idgrupoNum)
+    }
+
+    if (idsubgrupoNum) {
+        condicoes.push('PV.IDSUBGRUPO = ?')
+        params.push(idsubgrupoNum)
     }
 
     if (status === 'ativo') {

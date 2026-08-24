@@ -1,35 +1,89 @@
 import { useState, type FormEvent } from 'react'
 import PageShell from '../components/PageShell'
 import Spinner from '../components/Spinner'
+import ResumoSecaoTree from '../components/ResumoSecaoTree'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
-import { formatNumber } from '../lib/format'
-import type { CatalogoProdutoRow, ResumoMercadologicoRow, Secao } from '../types/comercial'
+import type { CatalogoProdutoRow, ResumoMercadologicoRow } from '../types/comercial'
 
 type Status = 'todos' | 'ativo' | 'inativo'
+
+interface Opcao {
+    id: string
+    label: string
+}
+
+function opcoesNivel(
+    rows: ResumoMercadologicoRow[],
+    idField: 'IDDIVISAO' | 'IDSECAO' | 'IDGRUPO' | 'IDSUBGRUPO',
+    descField: 'DESCRDIVISAO' | 'DESCRSECAO' | 'DESCRGRUPO' | 'DESCRSUBGRUPO',
+    filtrosSuperiores: (row: ResumoMercadologicoRow) => boolean
+): Opcao[] {
+    const mapa = new Map<string, string>()
+    for (const row of rows) {
+        if (!filtrosSuperiores(row)) continue
+        const idVal = row[idField]
+        if (idVal == null) continue
+        mapa.set(String(idVal), row[descField] ?? '')
+    }
+    return Array.from(mapa.entries())
+        .map(([id, label]) => ({ id, label }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+}
 
 export default function CatalogoProdutos() {
     const { me, loading: loadingMe, error: meError } = useMe()
 
     const [campo, setCampo] = useState('')
     const [busca, setBusca] = useState('')
+    const [iddivisao, setIddivisao] = useState('')
     const [idsecao, setIdsecao] = useState('')
+    const [idgrupo, setIdgrupo] = useState('')
+    const [idsubgrupo, setIdsubgrupo] = useState('')
     const [status, setStatus] = useState<Status>('ativo')
 
     const habilitado = me !== null && me.isAdmin
 
-    const { data: secoes } = useApi<Secao[]>('/comercial/secoes', {}, habilitado)
     const { data: resumo, loading: loadingResumo } = useApi<ResumoMercadologicoRow[]>(
         '/catalogo/resumo',
         {},
         habilitado
     )
+    const linhasResumo = resumo ?? []
 
-    const podeBuscar = busca.trim().length >= 3 || idsecao !== ''
+    // Cada nível de filtro só mostra opções compatíveis com os níveis já selecionados,
+    // e cascateia: trocar um nível mais alto limpa os níveis abaixo dele.
+    const opcoesDivisao = opcoesNivel(linhasResumo, 'IDDIVISAO', 'DESCRDIVISAO', () => true)
+    const opcoesSecao = opcoesNivel(
+        linhasResumo,
+        'IDSECAO',
+        'DESCRSECAO',
+        (row) => !iddivisao || String(row.IDDIVISAO ?? '') === iddivisao
+    )
+    const opcoesGrupo = opcoesNivel(
+        linhasResumo,
+        'IDGRUPO',
+        'DESCRGRUPO',
+        (row) =>
+            (!iddivisao || String(row.IDDIVISAO ?? '') === iddivisao) &&
+            (!idsecao || String(row.IDSECAO ?? '') === idsecao)
+    )
+    const opcoesSubgrupo = opcoesNivel(
+        linhasResumo,
+        'IDSUBGRUPO',
+        'DESCRSUBGRUPO',
+        (row) =>
+            (!iddivisao || String(row.IDDIVISAO ?? '') === iddivisao) &&
+            (!idsecao || String(row.IDSECAO ?? '') === idsecao) &&
+            (!idgrupo || String(row.IDGRUPO ?? '') === idgrupo)
+    )
+
+    const podeBuscar =
+        busca.trim().length >= 3 || iddivisao !== '' || idsecao !== '' || idgrupo !== '' || idsubgrupo !== ''
 
     const { data, loading, erro } = useApi<CatalogoProdutoRow[]>(
         '/catalogo/busca',
-        { busca, idsecao, status },
+        { busca, iddivisao, idsecao, idgrupo, idsubgrupo, status },
         habilitado && podeBuscar
     )
 
@@ -40,8 +94,29 @@ export default function CatalogoProdutos() {
         setBusca(campo)
     }
 
+    function selecionarDivisao(valor: string) {
+        setIddivisao(valor)
+        setIdsecao('')
+        setIdgrupo('')
+        setIdsubgrupo('')
+        setBusca(campo)
+    }
+
     function selecionarSecao(valor: string) {
         setIdsecao(valor)
+        setIdgrupo('')
+        setIdsubgrupo('')
+        setBusca(campo)
+    }
+
+    function selecionarGrupo(valor: string) {
+        setIdgrupo(valor)
+        setIdsubgrupo('')
+        setBusca(campo)
+    }
+
+    function selecionarSubgrupo(valor: string) {
+        setIdsubgrupo(valor)
         setBusca(campo)
     }
 
@@ -49,6 +124,19 @@ export default function CatalogoProdutos() {
         setStatus(valor)
         setBusca(campo)
     }
+
+    function limparFiltros() {
+        setCampo('')
+        setBusca('')
+        setIddivisao('')
+        setIdsecao('')
+        setIdgrupo('')
+        setIdsubgrupo('')
+        setStatus('ativo')
+    }
+
+    const temFiltroAtivo =
+        campo !== '' || busca !== '' || iddivisao !== '' || idsecao !== '' || idgrupo !== '' || idsubgrupo !== '' || status !== 'ativo'
 
     return (
         <PageShell
@@ -74,6 +162,23 @@ export default function CatalogoProdutos() {
                     </div>
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                            Divisão
+                        </span>
+                        <select
+                            value={iddivisao}
+                            onChange={(e) => selecionarDivisao(e.target.value)}
+                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                        >
+                            <option value="">Todas</option>
+                            {opcoesDivisao.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                    {d.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Seção
                         </span>
                         <select
@@ -82,9 +187,43 @@ export default function CatalogoProdutos() {
                             className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="">Todas</option>
-                            {(secoes ?? []).map((s) => (
-                                <option key={s.IDSECAO} value={s.IDSECAO}>
-                                    {s.DESCRSECAO}
+                            {opcoesSecao.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                    {s.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                            Grupo
+                        </span>
+                        <select
+                            value={idgrupo}
+                            onChange={(e) => selecionarGrupo(e.target.value)}
+                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                        >
+                            <option value="">Todos</option>
+                            {opcoesGrupo.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                    {g.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                            Subgrupo
+                        </span>
+                        <select
+                            value={idsubgrupo}
+                            onChange={(e) => selecionarSubgrupo(e.target.value)}
+                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                        >
+                            <option value="">Todos</option>
+                            {opcoesSubgrupo.map((sg) => (
+                                <option key={sg.id} value={sg.id}>
+                                    {sg.label}
                                 </option>
                             ))}
                         </select>
@@ -109,43 +248,20 @@ export default function CatalogoProdutos() {
                     >
                         Buscar
                     </button>
+                    {temFiltroAtivo && (
+                        <button
+                            type="button"
+                            onClick={limparFiltros}
+                            className="rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border/30"
+                        >
+                            Limpar filtros
+                        </button>
+                    )}
                 </form>
             }
         >
             <h2 className="mb-3 text-lg font-semibold text-gray-text dark:text-dark-text">Resumo por seção</h2>
-            <div className="mb-8 max-h-72 overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
-                <table className="w-full min-w-[500px] text-sm">
-                    <thead className="sticky top-0 bg-white dark:bg-dark-surface">
-                        <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
-                            <th className="px-4 py-3">Seção</th>
-                            <th className="px-4 py-3 text-right">Ativos</th>
-                            <th className="px-4 py-3 text-right">Inativos</th>
-                            <th className="px-4 py-3 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loadingResumo && (
-                            <tr>
-                                <td colSpan={4} className="px-4 py-8 text-center">
-                                    <Spinner className="mx-auto h-5 w-5" />
-                                </td>
-                            </tr>
-                        )}
-                        {!loadingResumo &&
-                            (resumo ?? []).map((row) => (
-                                <tr
-                                    key={row.IDSECAO}
-                                    className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
-                                >
-                                    <td className="px-4 py-2 font-medium">{row.DESCRSECAO}</td>
-                                    <td className="px-4 py-2 text-right text-green-base">{formatNumber(row.ATIVOS)}</td>
-                                    <td className="px-4 py-2 text-right text-red-base">{formatNumber(row.INATIVOS)}</td>
-                                    <td className="px-4 py-2 text-right">{formatNumber(row.TOTAL)}</td>
-                                </tr>
-                            ))}
-                    </tbody>
-                </table>
-            </div>
+            <ResumoSecaoTree rows={resumo ?? []} loading={loadingResumo} />
 
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
@@ -219,7 +335,7 @@ export default function CatalogoProdutos() {
                         {!loading && !podeBuscar && (
                             <tr>
                                 <td colSpan={7} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
-                                    Digite ao menos 3 caracteres ou selecione uma seção para buscar.
+                                    Digite ao menos 3 caracteres ou selecione um filtro de hierarquia para buscar.
                                 </td>
                             </tr>
                         )}
