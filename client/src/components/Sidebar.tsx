@@ -34,6 +34,8 @@ const GRUPOS_ADMIN: GrupoPaginas[] = [
             { to: '/estoque-transferencias', label: 'Estoque & Transferências' },
             { to: '/tributacao', label: 'Tributação' },
             { to: '/catalogo-produtos', label: 'Catálogo de Produtos' },
+            { to: '/fornecedores', label: 'Fornecedores' },
+            { to: '/inadimplencias', label: 'Inadimplências' },
         ],
     },
 ]

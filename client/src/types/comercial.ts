@@ -172,3 +172,139 @@ export interface ComparativoFabricanteRow {
     LUCRO_2_ANOS_ANTES: number
     VALOR_ESTOQUE: number
 }
+
+export interface Vendedor {
+    id: number
+    fornecedor_id: number
+    nome: string
+    cargo: string | null
+    telefone: string | null
+    whatsapp: string | null
+    email: string | null
+    observacoes: string | null
+    ativo: boolean
+}
+
+export interface Fornecedor {
+    id: number
+    idclifor: number
+    NOME: string
+    NOMEFANTASIA: string | null
+    CNPJCPF: string | null
+    EMAIL: string | null
+    FONE1: string | null
+    FONE2: string | null
+    FONECELULAR: string | null
+    NOMECONTATO1: string | null
+    NOMECONTATO2: string | null
+    ENDERECO: string | null
+    BAIRRO: string | null
+    UFCLIFOR: string | null
+    FLAGINATIVO: 'T' | 'F'
+    vendedores: Vendedor[]
+}
+
+export interface FornecedorCissRow {
+    IDCLIFOR: number
+    NOME: string
+    NOMEFANTASIA: string | null
+    CNPJCPF: string | null
+    EMAIL: string | null
+    FONE1: string | null
+    FONE2: string | null
+    FONECELULAR: string | null
+    NOMECONTATO1: string | null
+    NOMECONTATO2: string | null
+    ENDERECO: string | null
+    BAIRRO: string | null
+    UFCLIFOR: string | null
+    FLAGINATIVO: 'T' | 'F'
+}
+
+export type StatusInadimplencia = 'pendente' | 'cobrado' | 'ok' | 'nao_cobrar'
+
+export interface Inadimplencia {
+    id: number
+    fornecedor_id: number | null
+    vendedor_id: number | null
+    fornecedor_nome: string
+    vendedor_nome: string | null
+    idempresa: number | null
+    titulo: string | null
+    data_movimento: string | null
+    data_vencimento: string | null
+    saldo_devido: number
+    status: StatusInadimplencia
+    observacao: string | null
+    updated_at: string
+}
+
+export interface InadimplenciaInput {
+    fornecedor_id: number | null
+    vendedor_id?: number | null
+    fornecedor_nome: string
+    idempresa?: number | null
+    titulo?: string | null
+    data_movimento?: string | null
+    data_vencimento?: string | null
+    saldo_devido: number
+    status?: StatusInadimplencia
+    observacao?: string | null
+}
+
+export interface ResumoFornecedorInadimplencia {
+    fornecedor_id: number | null
+    fornecedor_nome: string
+    qtd_titulos: number
+    total_devido: number
+}
+
+export interface ProdutoCadastro {
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    SUBDESCRICAO: string | null
+    FABRICANTE: string | null
+    REFERENCIA: string | null
+    IDCODBARPROD: number | null
+    EMBALAGEMSAIDA: string | null
+    MODELO: string | null
+    PESOLIQUIDO: number | null
+    PESOBRUTO: number | null
+    NCM: string | null
+    CLASSFISCAL: string | null
+    DTCADASTRO: string | null
+    FLAGINATIVO: 'T' | 'F'
+    FLAGINATIVOCOMPRA: 'T' | 'F'
+    DESCRDIVISAO: string | null
+    DESCRSECAO: string | null
+    DESCRGRUPO: string | null
+    DESCRSUBGRUPO: string | null
+}
+
+export interface ProdutoTributacaoRow {
+    IDEMPRESA: number
+    UFORIGEM: string
+    PERICMSAI: number
+    PERICMSUBST: number
+    DESCRSITTRIBUTARIA: string | null
+}
+
+export interface ProdutoEstoquePrecoRow {
+    IDEMPRESA: number
+    QTDATUALESTOQUE: number | null
+    VALATUALESTOQUE: number | null
+    VALPRECOVENDA: number | null
+}
+
+export interface ProdutoVendaMargemRow {
+    IDEMPRESA: number
+    VENDA: number
+    LUCRO: number
+}
+
+export interface ProdutoDetalhe {
+    cadastro: ProdutoCadastro
+    tributacao: ProdutoTributacaoRow[]
+    estoquePreco: ProdutoEstoquePrecoRow[]
+    vendaMargem: ProdutoVendaMargemRow[]
+}

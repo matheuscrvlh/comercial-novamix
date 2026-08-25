@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import PageShell from '../components/PageShell'
 import Spinner from '../components/Spinner'
 import ResumoSecaoTree from '../components/ResumoSecaoTree'
+import ProdutoDetalheModal from '../components/ProdutoDetalheModal'
+import { InfoIcon } from '../components/icons'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import type { CatalogoProdutoRow, ResumoMercadologicoRow } from '../types/comercial'
@@ -41,6 +43,7 @@ export default function CatalogoProdutos() {
     const [idgrupo, setIdgrupo] = useState('')
     const [idsubgrupo, setIdsubgrupo] = useState('')
     const [status, setStatus] = useState<Status>('ativo')
+    const [produtoSelecionado, setProdutoSelecionado] = useState<number | null>(null)
 
     const habilitado = me !== null && me.isAdmin
 
@@ -276,12 +279,13 @@ export default function CatalogoProdutos() {
                             <th className="px-4 py-3">Grupo</th>
                             <th className="px-4 py-3">Subgrupo</th>
                             <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center">
+                                <td colSpan={8} className="px-4 py-8 text-center">
                                     <Spinner className="mx-auto h-5 w-5" />
                                 </td>
                             </tr>
@@ -321,12 +325,22 @@ export default function CatalogoProdutos() {
                                             {row.FLAGINATIVO === 'F' ? 'Ativo' : 'Inativo'}
                                         </span>
                                     </td>
+                                    <td className="px-4 py-2.5 text-right">
+                                        <button
+                                            type="button"
+                                            onClick={() => setProdutoSelecionado(row.IDSUBPRODUTO)}
+                                            title="Ver tudo sobre o produto"
+                                            className="inline-flex items-center justify-center rounded-lg p-1.5 text-gray-dark transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text-muted"
+                                        >
+                                            <InfoIcon className="h-4 w-4" />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
 
                         {!loading && podeBuscar && linhas.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
+                                <td colSpan={8} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
                                     Nenhum produto encontrado.
                                 </td>
                             </tr>
@@ -334,7 +348,7 @@ export default function CatalogoProdutos() {
 
                         {!loading && !podeBuscar && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
+                                <td colSpan={8} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
                                     Digite ao menos 3 caracteres ou selecione um filtro de hierarquia para buscar.
                                 </td>
                             </tr>
@@ -342,6 +356,10 @@ export default function CatalogoProdutos() {
                     </tbody>
                 </table>
             </div>
+
+            {produtoSelecionado !== null && (
+                <ProdutoDetalheModal idsubproduto={produtoSelecionado} onClose={() => setProdutoSelecionado(null)} />
+            )}
         </PageShell>
     )
 }

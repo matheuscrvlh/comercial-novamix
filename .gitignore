@@ -3,3 +3,4 @@ dist
 .env
 .claude
 server/installer
+server/scripts/inadimplencias_seed.json

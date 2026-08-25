@@ -100,3 +100,62 @@ export async function getResumoMercadologico(req: FastifyRequest, res: FastifyRe
         await conn.close()
     }
 }
+
+interface ProdutoDetalheParams {
+    idsubproduto: string
+}
+
+function dataISO(data: Date) {
+    return data.toISOString().slice(0, 10)
+}
+
+export async function getProdutoDetalhe(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return
+
+    if (permission !== ADMIN_ACCESS) {
+        res.code(403).send({ error: 'Acesso restrito a administradores.' })
+        return
+    }
+
+    const { idsubproduto } = req.params as ProdutoDetalheParams
+    const id = parseInt(idsubproduto, 10)
+
+    if (!id) {
+        res.code(400).send({ error: 'Produto inválido.' })
+        return
+    }
+
+    const hoje = new Date()
+    const noventaDiasAtras = new Date(hoje)
+    noventaDiasAtras.setDate(noventaDiasAtras.getDate() - 90)
+
+    const sqlCadastro = loadQueryComercial('produto_cadastro.sql')
+    const sqlTributacao = loadQueryComercial('produto_tributacao.sql')
+    const sqlEstoquePreco = loadQueryComercial('produto_estoque_preco.sql')
+    const sqlVendaMargem = loadQueryComercial('produto_venda_margem.sql')
+
+    const conn = await connCiss()
+    try {
+        const [cadastro, tributacao, estoquePreco, vendaMargem] = await Promise.all([
+            conn.query(sqlCadastro, [id]),
+            conn.query(sqlTributacao, [id]),
+            conn.query(sqlEstoquePreco, [id, id]),
+            conn.query(sqlVendaMargem, [id, dataISO(noventaDiasAtras), dataISO(hoje)]),
+        ])
+
+        if (cadastro.length === 0) {
+            res.code(404).send({ error: 'Produto não encontrado.' })
+            return
+        }
+
+        res.send({
+            cadastro: cadastro[0],
+            tributacao,
+            estoquePreco,
+            vendaMargem,
+        })
+    } finally {
+        await conn.close()
+    }
+}

@@ -8,6 +8,8 @@ import ComparativoFabricante from './pages/ComparativoFabricante'
 import AnaliseMargem from './pages/AnaliseMargem'
 import TicketOperador from './pages/TicketOperador'
 import CatalogoProdutos from './pages/CatalogoProdutos'
+import Fornecedores from './pages/Fornecedores'
+import Inadimplencias from './pages/Inadimplencias'
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
         <Route path='/analise-margem' element={<AnaliseMargem />}/>
         <Route path='/ticket-operador' element={<TicketOperador />}/>
         <Route path='/catalogo-produtos' element={<CatalogoProdutos />}/>
+        <Route path='/fornecedores' element={<Fornecedores />}/>
+        <Route path='/inadimplencias' element={<Inadimplencias />}/>
       </Routes>
     </>
   )
