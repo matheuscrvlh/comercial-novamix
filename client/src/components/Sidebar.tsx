@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import Logo from './Logo'
-import { CloseIcon, LogOutIcon, MenuIcon } from './icons'
+import { X, LogOut, Menu } from 'lucide-react'
 
 type SidebarProps = {
     isAdmin: boolean
@@ -77,7 +77,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
                 className='fixed top-4 left-4 z-50 rounded-md bg-orange-base p-2 text-white shadow-lg transition-colors hover:bg-orange-light lg:hidden'
                 aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
             >
-                {isOpen ? <CloseIcon className='h-6 w-6' /> : <MenuIcon className='h-6 w-6' />}
+                {isOpen ? <X className='h-6 w-6' /> : <Menu className='h-6 w-6' />}
             </button>
 
             <div
@@ -115,7 +115,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
                     href={HUB_URL}
                     className='mx-4 mb-6 flex items-center justify-center gap-2 rounded-lg bg-red-light px-4 py-2 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-base'
                 >
-                    <LogOutIcon className='h-4 w-4' />
+                    <LogOut className='h-4 w-4' />
                     Voltar ao hub
                 </a>
             </aside>

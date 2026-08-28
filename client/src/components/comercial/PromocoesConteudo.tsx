@@ -6,7 +6,7 @@ import Spinner from '../Spinner'
 import Modal from '../Modal'
 import StatCard from '../charts/StatCard'
 import RankingBars from '../charts/RankingBars'
-import { CheckIcon, FilterIcon, TagIcon } from '../icons'
+import { Check, Filter, Tag } from 'lucide-react'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatDate, formatNumber, formatPercent } from '../../lib/format'
@@ -71,7 +71,7 @@ function StatusFilterButton({
                 aria-label="Filtrar por status"
                 className="flex items-center gap-1.5 rounded-lg border border-gray-base/30 bg-white px-3 py-1.5 text-xs font-medium text-gray-text transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
             >
-                <FilterIcon className="h-3.5 w-3.5" />
+                <Filter className="h-3.5 w-3.5" />
                 Status
                 {selecionados.length > 0 && (
                     <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-base px-1 text-[10px] font-semibold text-white">
@@ -105,7 +105,7 @@ function StatusFilterButton({
                                 }`}
                             >
                                 {STATUS_LABEL[status]}
-                                {ativo && <CheckIcon className="h-4 w-4 shrink-0" />}
+                                {ativo && <Check className="h-4 w-4 shrink-0" />}
                             </button>
                         )
                     })}
@@ -267,7 +267,7 @@ export default function PromocoesConteudo() {
                 <Modal
                     titulo={
                         <span className="flex items-center gap-2">
-                            <TagIcon className="h-5 w-5 shrink-0 text-orange-base" />
+                            <Tag className="h-5 w-5 shrink-0 text-orange-base" />
                             {detalhe?.DESCRPROMOCAO ?? 'Promoção'}
                         </span>
                     }

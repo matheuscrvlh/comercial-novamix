@@ -4,7 +4,7 @@ import Spinner from '../components/Spinner'
 import ResumoSecaoTree from '../components/ResumoSecaoTree'
 import ProdutoDetalheModal from '../components/ProdutoDetalheModal'
 import ProdutoCodigos from '../components/ProdutoCodigos'
-import { InfoIcon } from '../components/icons'
+import { Info } from 'lucide-react'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import type { CatalogoProdutoRow, ResumoMercadologicoRow } from '../types/comercial'
@@ -333,7 +333,7 @@ export default function CatalogoProdutos() {
                                             title="Ver tudo sobre o produto"
                                             className="inline-flex items-center justify-center rounded-lg p-1.5 text-gray-dark transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text-muted"
                                         >
-                                            <InfoIcon className="h-4 w-4" />
+                                            <Info className="h-4 w-4" />
                                         </button>
                                     </td>
                                 </tr>

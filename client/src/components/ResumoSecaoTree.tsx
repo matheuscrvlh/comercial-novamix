@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Spinner from './Spinner'
-import { ChevronDownIcon } from './icons'
+import { ChevronDown } from 'lucide-react'
 import { formatNumber } from '../lib/format'
 import type { ResumoMercadologicoRow } from '../types/comercial'
 
@@ -90,7 +90,7 @@ function ResumoRow({
                                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-dark transition hover:bg-gray-base/10 dark:text-dark-text-muted"
                                 aria-label={aberto ? 'Recolher' : 'Expandir'}
                             >
-                                <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${aberto ? 'rotate-180' : ''}`} />
                             </button>
                         ) : (
                             <span className="h-5 w-5 shrink-0" />

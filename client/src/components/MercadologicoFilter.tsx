@@ -1,5 +1,5 @@
 import { useMemo, useState, type FocusEvent } from 'react'
-import { CheckIcon, ChevronDownIcon } from './icons'
+import { Check, ChevronDown } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
 import type { HierarquiaMercadologicaRow } from '../types/comercial'
 
@@ -80,7 +80,7 @@ function DropdownMultiSelect({
                 className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-base/30 bg-white px-4 py-2 text-sm font-medium text-gray-text transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
             >
                 <span className="truncate">{rotulo}</span>
-                <ChevronDownIcon className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
@@ -111,7 +111,7 @@ function DropdownMultiSelect({
                                 }`}
                             >
                                 <span className="truncate">{opcao.label}</span>
-                                {ativo && <CheckIcon className="h-4 w-4 shrink-0" />}
+                                {ativo && <Check className="h-4 w-4 shrink-0" />}
                             </button>
                         )
                     })}

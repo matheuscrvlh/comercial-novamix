@@ -425,6 +425,7 @@ export interface ProdutoVendaMargemRow {
 
 export interface ValidadeRow {
     IDEMPRESA: number
+    IDPLANILHA: number
     NOME_EMPRESA: string
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
@@ -432,10 +433,19 @@ export interface ValidadeRow {
     DTLANCAMENTO: string | null
     DTVALIDADE: string
     QTDPRODUTO: number
-    STATUS: string
     OBSERVACAO: string | null
     PRECOSUGERIDO: number
     VALOR_ESTIMADO: number
+    STATUS_TIPO_ID: number | null
+    STATUS_NOME: string | null
+    STATUS_COR: string | null
+}
+
+export interface ValidadeStatusTipo {
+    id: number
+    nome: string
+    cor: string
+    ativo: boolean
 }
 
 export interface CotacaoConcorrenteRow {

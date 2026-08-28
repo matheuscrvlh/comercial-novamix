@@ -3,6 +3,7 @@ import { loadQueryComercial } from './query.service'
 
 export interface ValidadeRow {
     IDEMPRESA: number
+    IDPLANILHA: number
     NOME_EMPRESA: string
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
@@ -10,7 +11,6 @@ export interface ValidadeRow {
     DTLANCAMENTO: string | null
     DTVALIDADE: string
     QTDPRODUTO: number
-    STATUS: string
     OBSERVACAO: string | null
     PRECOSUGERIDO: number
     VALOR_ESTIMADO: number
@@ -18,7 +18,6 @@ export interface ValidadeRow {
 
 export interface ListarValidadeFiltros {
     filiaisFisicas: number[]
-    status?: string
     vencimentoInicio?: string
     vencimentoFim?: string
     lancamentoInicio?: string
@@ -32,11 +31,6 @@ export interface ListarValidadeFiltros {
 export async function listarValidade(filtros: ListarValidadeFiltros): Promise<ValidadeRow[]> {
     const condicoes: string[] = []
     const params: unknown[] = []
-
-    if (filtros.status) {
-        condicoes.push('NV.STATUS = ?')
-        params.push(filtros.status)
-    }
 
     if (filtros.vencimentoInicio && filtros.vencimentoFim) {
         condicoes.push('NV.DTVALIDADE BETWEEN ? AND ?')
@@ -76,6 +70,7 @@ export async function listarValidade(filtros: ListarValidadeFiltros): Promise<Va
         const linhas: any[] = await conn.query(sql, params)
         return linhas.map((r) => ({
             IDEMPRESA: r.IDEMPRESA,
+            IDPLANILHA: r.IDPLANILHA,
             NOME_EMPRESA: r.NOME_EMPRESA,
             IDSUBPRODUTO: r.IDSUBPRODUTO,
             DESCRICAOPRODUTO: r.DESCRICAOPRODUTO,
@@ -83,7 +78,6 @@ export async function listarValidade(filtros: ListarValidadeFiltros): Promise<Va
             DTLANCAMENTO: r.DTLANCAMENTO,
             DTVALIDADE: r.DTVALIDADE,
             QTDPRODUTO: Number(r.QTDPRODUTO) || 0,
-            STATUS: r.STATUS,
             OBSERVACAO: r.OBSERVACAO,
             PRECOSUGERIDO: Number(r.PRECOSUGERIDO) || 0,
             VALOR_ESTIMADO: Number(r.VALOR_ESTIMADO) || 0,

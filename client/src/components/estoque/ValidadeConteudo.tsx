@@ -1,15 +1,19 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FocusEvent, type FormEvent } from 'react'
 import FiltersMenu from '../FiltersMenu'
 import FilialMultiFilter from '../FilialMultiFilter'
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
+import ValidadeStatusModal from './ValidadeStatusModal'
+import { Settings, ChevronDown, Check } from 'lucide-react'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
+import { apiPut } from '../../lib/api'
 import { formatCurrency, formatDate } from '../../lib/format'
 import { DATE_PRESETS_FUTURO, getPresetRange, getPresetRangeFuturo } from '../../lib/date'
 import { nomeFilial } from '../../constants/filiais'
-import type { ValidadeRow } from '../../types/comercial'
+import { classeBadgeStatus } from '../../lib/statusColors'
+import type { ValidadeRow, ValidadeStatusTipo } from '../../types/comercial'
 
 const inputClass =
     'w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
@@ -24,16 +28,89 @@ function diasRestantes(dataValidade: string) {
     return Math.round((validade.getTime() - hoje.getTime()) / 86400000)
 }
 
+function chaveValidade(r: ValidadeRow) {
+    return `${r.IDEMPRESA}|${r.IDPLANILHA}|${r.IDSUBPRODUTO}|${r.DTVALIDADE}`
+}
+
+type StatusPickerProps = {
+    tipos: ValidadeStatusTipo[]
+    statusAtual: { id: number | null; nome: string | null; cor: string | null }
+    onChange: (id: number | null) => void
+}
+
+/**
+ * Dropdown compacto por linha - clica no badge atual, escolhe um status
+ * cadastrado ou "Sem status". Atualiza otimisticamente (ver onChange no pai).
+ */
+function StatusPicker({ tipos, statusAtual, onChange }: StatusPickerProps) {
+    const [open, setOpen] = useState(false)
+
+    function fecharSeForaDoContainer(event: FocusEvent<HTMLDivElement>) {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+            setOpen(false)
+        }
+    }
+
+    return (
+        <div className="relative" onBlur={fecharSeForaDoContainer}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition hover:opacity-80 ${
+                    statusAtual.id !== null
+                        ? classeBadgeStatus(statusAtual.cor)
+                        : 'bg-gray-base/10 text-gray-dark dark:text-dark-text-muted'
+                }`}
+            >
+                {statusAtual.nome ?? 'Sem status'}
+                <ChevronDown className="h-3 w-3" />
+            </button>
+
+            {open && (
+                <div className="absolute left-0 z-10 mt-1 w-44 overflow-hidden rounded-lg border border-gray-base/30 bg-white shadow-lg dark:border-dark-border dark:bg-dark-surface">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onChange(null)
+                            setOpen(false)
+                        }}
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-gray-text transition hover:bg-gray dark:text-dark-text dark:hover:bg-dark-surface-2"
+                    >
+                        Sem status
+                        {statusAtual.id === null && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    {tipos.map((tipo) => (
+                        <button
+                            key={tipo.id}
+                            type="button"
+                            onClick={() => {
+                                onChange(tipo.id)
+                                setOpen(false)
+                            }}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-gray-text transition hover:bg-gray dark:text-dark-text dark:hover:bg-dark-surface-2"
+                        >
+                            <span className={`rounded-full px-2 py-0.5 ${classeBadgeStatus(tipo.cor)}`}>{tipo.nome}</span>
+                            {statusAtual.id === tipo.id && <Check className="h-3.5 w-3.5 shrink-0" />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
 export default function ValidadeConteudo() {
     const { me } = useMe()
     const [selecionadas, setSelecionadas] = useState<number[]>([])
-    const [status, setStatus] = useState('')
     const [campo, setCampo] = useState('')
     const [busca, setBusca] = useState('')
     const [vencimentoInicio, setVencimentoInicio] = useState(() => getPresetRangeFuturo('mes').inicio)
     const [vencimentoFim, setVencimentoFim] = useState(() => getPresetRangeFuturo('mes').fim)
     const [lancamentoInicio, setLancamentoInicio] = useState(() => getPresetRange('mes').inicio)
     const [lancamentoFim, setLancamentoFim] = useState(() => getPresetRange('mes').fim)
+    const [gerenciarAberto, setGerenciarAberto] = useState(false)
+    const [statusRefreshKey, setStatusRefreshKey] = useState(0)
+    const [overrides, setOverrides] = useState<Record<string, { id: number | null; nome: string | null; cor: string | null }>>({})
 
     const habilitado = me !== null && me.isAdmin
     const lojas = me?.branches ?? []
@@ -46,15 +123,43 @@ export default function ValidadeConteudo() {
         lancamentoInicio,
         lancamentoFim,
     }
-    if (status) params.status = status
     if (busca) params.busca = busca
 
     const { data, loading, erro } = useApi<ValidadeRow[]>('/validade', params, habilitado)
     const registros = data ?? []
 
+    const {
+        data: tiposData,
+        loading: loadingTipos,
+        erro: erroTipos,
+    } = useApi<ValidadeStatusTipo[]>('/validade/status-tipos', { _r: String(statusRefreshKey) }, habilitado)
+    const tipos = tiposData ?? []
+
     function buscar(e: FormEvent) {
         e.preventDefault()
         setBusca(campo)
+    }
+
+    async function alterarStatus(row: ValidadeRow, novoId: number | null) {
+        const chave = chaveValidade(row)
+        const tipo = novoId !== null ? tipos.find((t) => t.id === novoId) : undefined
+        setOverrides((prev) => ({ ...prev, [chave]: { id: novoId, nome: tipo?.nome ?? null, cor: tipo?.cor ?? null } }))
+
+        try {
+            await apiPut('/validade/status', {
+                idempresa: row.IDEMPRESA,
+                idplanilha: row.IDPLANILHA,
+                idsubproduto: row.IDSUBPRODUTO,
+                dtvalidade: row.DTVALIDADE,
+                status_tipo_id: novoId,
+            })
+        } catch {
+            setOverrides((prev) => {
+                const next = { ...prev }
+                delete next[chave]
+                return next
+            })
+        }
     }
 
     return (
@@ -84,14 +189,6 @@ export default function ValidadeConteudo() {
                         onChangeFim={setLancamentoFim}
                     />
                 </div>
-                <div className="flex flex-col gap-2">
-                    <span className={labelClass}>Status (CISS)</span>
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
-                        <option value="">Todos</option>
-                        <option value="C">C</option>
-                        <option value="S">S</option>
-                    </select>
-                </div>
                 <form onSubmit={buscar} className="flex flex-col gap-2">
                     <span className={labelClass}>Buscar produto</span>
                     <div className="flex gap-2">
@@ -109,6 +206,19 @@ export default function ValidadeConteudo() {
             </FiltersMenu>
 
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
+            {erroTipos && <p className="mb-4 text-sm text-red-base">{erroTipos}</p>}
+
+            <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-text dark:text-dark-text">Controle de validade</h3>
+                <button
+                    type="button"
+                    onClick={() => setGerenciarAberto(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-base/30 bg-white px-3 py-1.5 text-xs font-medium text-gray-text transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                >
+                    <Settings className="h-3.5 w-3.5" />
+                    Gerenciar status
+                </button>
+            </div>
 
             <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[900px] text-sm">
@@ -125,7 +235,7 @@ export default function ValidadeConteudo() {
                         </tr>
                     </thead>
                     <tbody>
-                        {loading && (
+                        {(loading || loadingTipos) && (
                             <tr>
                                 <td colSpan={8} className="px-4 py-8 text-center">
                                     <Spinner className="mx-auto h-5 w-5" />
@@ -133,8 +243,11 @@ export default function ValidadeConteudo() {
                             </tr>
                         )}
                         {!loading &&
+                            !loadingTipos &&
                             registros.map((r, i) => {
                                 const dias = diasRestantes(r.DTVALIDADE)
+                                const chave = chaveValidade(r)
+                                const statusAtual = overrides[chave] ?? { id: r.STATUS_TIPO_ID, nome: r.STATUS_NOME, cor: r.STATUS_COR }
                                 return (
                                     <tr
                                         key={i}
@@ -163,9 +276,7 @@ export default function ValidadeConteudo() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <span className="rounded-full bg-gray-base/20 px-2 py-0.5 text-xs font-medium text-gray-dark dark:text-dark-text-muted">
-                                                {r.STATUS}
-                                            </span>
+                                            <StatusPicker tipos={tipos} statusAtual={statusAtual} onChange={(id) => alterarStatus(r, id)} />
                                         </td>
                                         <td className="px-4 py-2.5 text-xs text-gray-dark dark:text-dark-text-muted">
                                             {r.OBSERVACAO ?? '—'}
@@ -173,7 +284,7 @@ export default function ValidadeConteudo() {
                                     </tr>
                                 )
                             })}
-                        {!loading && registros.length === 0 && (
+                        {!loading && !loadingTipos && registros.length === 0 && (
                             <tr>
                                 <td colSpan={8} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
                                     Nenhum registro de validade encontrado.
@@ -183,6 +294,17 @@ export default function ValidadeConteudo() {
                     </tbody>
                 </table>
             </div>
+
+            {gerenciarAberto && (
+                <ValidadeStatusModal
+                    tipos={tipos}
+                    onClose={() => setGerenciarAberto(false)}
+                    onChanged={() => {
+                        setOverrides({})
+                        setStatusRefreshKey((k) => k + 1)
+                    }}
+                />
+            )}
         </>
     )
 }

@@ -20,7 +20,8 @@ const app = fastify();
 
 await app.register(cors, {
     origin: ['https://hub.lojanovamix.com.br', 'https://comercial.lojanovamix.com.br', 'http://localhost:5173'],
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']
 });
 
 if(!process.env.SERVER_PORT) {

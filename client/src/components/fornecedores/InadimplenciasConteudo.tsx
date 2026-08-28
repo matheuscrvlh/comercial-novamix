@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import Spinner from '../Spinner'
 import Modal from '../Modal'
-import { PlusIcon, TrashIcon, PencilIcon } from '../icons'
+import { Plus, Trash2, Pencil } from 'lucide-react'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../lib/api'
@@ -157,7 +157,7 @@ export default function InadimplenciasConteudo() {
                     }}
                     className={`${botaoPrimario} flex items-center gap-1.5`}
                 >
-                    <PlusIcon className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Novo lançamento
                 </button>
             </form>
@@ -249,14 +249,14 @@ export default function InadimplenciasConteudo() {
                                                 }}
                                                 className="rounded-lg p-1.5 text-gray-dark transition hover:bg-gray-base/10 dark:text-dark-text-muted dark:hover:bg-dark-border/30"
                                             >
-                                                <PencilIcon className="h-4 w-4" />
+                                                <Pencil className="h-4 w-4" />
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => excluir(l.id)}
                                                 className="rounded-lg p-1.5 text-red-base transition hover:bg-red-base/10"
                                             >
-                                                <TrashIcon className="h-4 w-4" />
+                                                <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
                                     </td>

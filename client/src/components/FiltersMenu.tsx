@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { CloseIcon, FilterIcon } from './icons'
+import { X, Filter } from 'lucide-react'
 
 type FiltersMenuProps = {
     children: ReactNode
@@ -31,7 +31,7 @@ export default function FiltersMenu({ children }: FiltersMenuProps) {
                 onClick={() => setIsOpen(true)}
                 className='flex items-center gap-2 rounded-lg border border-gray-base/30 bg-white px-4 py-2 text-sm font-medium text-gray-text shadow-sm transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
             >
-                <FilterIcon className='h-4 w-4' />
+                <Filter className='h-4 w-4' />
                 Filtros
             </button>
 
@@ -55,7 +55,7 @@ export default function FiltersMenu({ children }: FiltersMenuProps) {
                         className='rounded-md p-1 text-gray-dark hover:text-orange-base dark:text-dark-text-muted dark:hover:text-orange-light'
                         aria-label='Fechar filtros'
                     >
-                        <CloseIcon className='h-5 w-5' />
+                        <X className='h-5 w-5' />
                     </button>
                 </div>
 
