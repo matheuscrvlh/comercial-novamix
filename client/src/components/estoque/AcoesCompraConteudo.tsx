@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import FiltersMenu from '../FiltersMenu'
 import FilialMultiFilter from '../FilialMultiFilter'
+import MercadologicoFilter, { type MercadologicoSelecao } from '../MercadologicoFilter'
 import Spinner from '../Spinner'
 import TabButtons from '../TabButtons'
 import ProdutoCodigos from '../ProdutoCodigos'
@@ -25,6 +26,7 @@ const labelClass = 'text-xs font-semibold uppercase tracking-wide text-gray-dark
 export default function AcoesCompraConteudo() {
     const { me } = useMe()
     const [selecionadas, setSelecionadas] = useState<number[]>([])
+    const [mercadologico, setMercadologico] = useState<MercadologicoSelecao>({ divisoes: [], secoes: [], grupos: [] })
     const [aba, setAba] = useState<AbaId>('comprar')
     const [diasComprar, setDiasComprar] = useState('15')
     const [diasExcesso, setDiasExcesso] = useState('60')
@@ -41,7 +43,15 @@ export default function AcoesCompraConteudo() {
         erro: erroEstoqueListas,
     } = useApi<GestaoEstoqueListasData>(
         '/comercial/estoque-listas',
-        { filiais: filiaisAtivas.join(','), diasComprar, diasExcesso, diasInativar },
+        {
+            filiais: filiaisAtivas.join(','),
+            diasComprar,
+            diasExcesso,
+            diasInativar,
+            divisoes: mercadologico.divisoes.join(','),
+            secoes: mercadologico.secoes.join(','),
+            grupos: mercadologico.grupos.join(','),
+        },
         habilitado
     )
 
@@ -60,6 +70,10 @@ export default function AcoesCompraConteudo() {
                 <div className="flex flex-col gap-2">
                     <span className={labelClass}>Filiais</span>
                     <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className={labelClass}>Divisão / Seção / Grupo</span>
+                    <MercadologicoFilter selecao={mercadologico} onChange={setMercadologico} />
                 </div>
                 <div className="flex flex-col gap-2">
                     <span className={labelClass}>Comprar urgente: cobertura menor que (dias)</span>

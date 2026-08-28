@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import FiltersMenu from '../FiltersMenu'
 import FilialMultiFilter from '../FilialMultiFilter'
+import MercadologicoFilter, { type MercadologicoSelecao } from '../MercadologicoFilter'
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
@@ -17,6 +18,7 @@ export default function TransferenciasConteudo() {
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
+    const [mercadologico, setMercadologico] = useState<MercadologicoSelecao>({ divisoes: [], secoes: [], grupos: [] })
 
     const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
@@ -25,7 +27,14 @@ export default function TransferenciasConteudo() {
 
     const { data, loading, erro } = useApi<EstoqueResumoData>(
         '/estoque/resumo',
-        { inicio, fim, filiais: filiaisAtivas.join(',') },
+        {
+            inicio,
+            fim,
+            filiais: filiaisAtivas.join(','),
+            divisoes: mercadologico.divisoes.join(','),
+            secoes: mercadologico.secoes.join(','),
+            grupos: mercadologico.grupos.join(','),
+        },
         habilitado
     )
 
@@ -47,6 +56,12 @@ export default function TransferenciasConteudo() {
                         Período
                     </span>
                     <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Divisão / Seção / Grupo
+                    </span>
+                    <MercadologicoFilter selecao={mercadologico} onChange={setMercadologico} />
                 </div>
             </FiltersMenu>
 

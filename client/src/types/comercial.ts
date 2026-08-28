@@ -32,6 +32,15 @@ export interface Secao {
     DESCRSECAO: string
 }
 
+export interface HierarquiaMercadologicaRow {
+    IDDIVISAO: number | null
+    DESCRDIVISAO: string | null
+    IDSECAO: number | null
+    DESCRSECAO: string | null
+    IDGRUPO: number | null
+    DESCRGRUPO: string | null
+}
+
 export interface VendaMetaSecaoRow {
     IDSECAO: number
     DESCRSECAO: string
@@ -220,6 +229,54 @@ export interface TicketOperadorRow {
     TICKETS_POSITIVOS: number
     TICKETS_NEGATIVOS: number
     TOTAL_TICKETS: number
+}
+
+export type StatusPromocao = 'ativa' | 'futura' | 'encerrada'
+
+export interface PromocaoRow {
+    IDPROMOCAO: number
+    DESCRPROMOCAO: string
+    DTINIPROMOCAO: string
+    DTFIMPROMOCAO: string
+    QTD_PRODUTOS: number
+    QTD_LOJAS: number
+    STATUS: StatusPromocao
+}
+
+export interface PromocaoLoja {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+}
+
+export interface PromocaoProdutoRow {
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
+    VALPRECO: number
+    VALDESCONTO: number
+    PERDESCONTO: number
+    VENDA: number
+    LUCRO: number
+    QTD_VENDIDA: number
+    VENDA_MEDIA_DIARIA_ANTES: number
+    QTD_MEDIA_DIARIA_ANTES: number
+}
+
+export interface PromocaoAnalitico {
+    mediaDiariaDurante: number | null
+    mediaDiariaAntes: number | null
+    liftVendaPct: number | null
+    diasComparados: number
+}
+
+export interface PromocaoDetalhe {
+    IDPROMOCAO: number
+    DESCRPROMOCAO: string
+    DTINIPROMOCAO: string
+    DTFIMPROMOCAO: string
+    lojas: PromocaoLoja[]
+    produtos: PromocaoProdutoRow[]
+    analitico: PromocaoAnalitico
 }
 
 export interface ComparativoFabricanteRow {

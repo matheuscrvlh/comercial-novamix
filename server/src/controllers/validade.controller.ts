@@ -1,6 +1,15 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkBranch, checkPermission } from '../middlewares/auth.middlewares'
 import { listarValidade } from '../services/validade.service'
+import type { FiltroMercadologicoQuery } from '../utils/mercadologico'
+
+function idsValidos(valor: string | undefined): number[] {
+    if (!valor) return []
+    return valor
+        .split(',')
+        .map((id) => parseInt(id, 10))
+        .filter((id) => !Number.isNaN(id))
+}
 
 const ADMIN_ACCESS = 'admin'
 
@@ -19,7 +28,7 @@ async function resolveFiliais(req: FastifyRequest, res: FastifyReply) {
     return branches
 }
 
-interface ListaQuery {
+interface ListaQuery extends FiltroMercadologicoQuery {
     filiais?: string
     status?: string
     vencimentoInicio?: string
@@ -33,7 +42,8 @@ export async function getValidade(req: FastifyRequest, res: FastifyReply) {
     const filiaisLiberadas = await resolveFiliais(req, res)
     if (!filiaisLiberadas) return
 
-    const { filiais, status, vencimentoInicio, vencimentoFim, lancamentoInicio, lancamentoFim, busca } = req.query as ListaQuery
+    const { filiais, status, vencimentoInicio, vencimentoFim, lancamentoInicio, lancamentoFim, busca, divisoes, secoes, grupos } =
+        req.query as ListaQuery
 
     let filiaisFisicas = filiaisLiberadas
     if (filiais) {
@@ -54,6 +64,9 @@ export async function getValidade(req: FastifyRequest, res: FastifyReply) {
             lancamentoInicio,
             lancamentoFim,
             busca,
+            divisoes: idsValidos(divisoes),
+            secoes: idsValidos(secoes),
+            grupos: idsValidos(grupos),
         })
     )
 }

@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import PageShell from '../components/PageShell'
 import FiltersMenu from '../components/FiltersMenu'
 import FilialMultiFilter from '../components/FilialMultiFilter'
 import DateRangeFilter from '../components/DateRangeFilter'
 import Spinner from '../components/Spinner'
 import RankingList from '../components/RankingList'
+import TabButtons from '../components/TabButtons'
+import PromocoesConteudo from '../components/comercial/PromocoesConteudo'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatCurrency, formatPercent } from '../lib/format'
@@ -56,9 +59,19 @@ function CelulaValorMeta({ valor, meta, formatValor, percentual, menorEhMelhor =
     )
 }
 
+const ABAS = [
+    { id: 'visao-geral', label: 'Visão Geral' },
+    { id: 'promocoes', label: 'Promoções' },
+] as const
+
+type AbaId = (typeof ABAS)[number]['id']
+
 export default function GestaoComercial() {
     const { me, loading: loadingMe, error: meError } = useMe()
+    const [searchParams] = useSearchParams()
 
+    const abaInicial = searchParams.get('aba') === 'promocoes' ? 'promocoes' : 'visao-geral'
+    const [aba, setAba] = useState<AbaId>(abaInicial)
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
@@ -67,7 +80,7 @@ export default function GestaoComercial() {
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
     const mesano = mesanoDe(fim)
 
-    const habilitado = me !== null && me.isAdmin
+    const habilitado = me !== null && me.isAdmin && aba === 'visao-geral'
 
     const { data, loading, erro } = useApi<VendaMetaSecaoRow[]>(
         '/comercial/venda-meta-secao',
@@ -92,152 +105,162 @@ export default function GestaoComercial() {
             titulo="Gestão Comercial"
             subtitulo="Venda, margem, compra e estoque por seção, comparados à meta do mês."
             filtros={
-                <FiltersMenu>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Filiais
-                        </span>
-                        <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Período
-                        </span>
-                        <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
-                    </div>
-                </FiltersMenu>
+                aba === 'visao-geral' ? (
+                    <FiltersMenu>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                                Filiais
+                            </span>
+                            <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                                Período
+                            </span>
+                            <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
+                        </div>
+                    </FiltersMenu>
+                ) : undefined
             }
         >
-            {erro && <p className="text-sm text-red-base mb-4">{erro}</p>}
+            <TabButtons abas={ABAS} ativa={aba} onChange={(id) => setAba(id as AbaId)} />
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
-                <table className="w-full min-w-[1250px] text-sm">
-                    <thead>
-                        <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
-                            <th className="px-4 py-3">Seção</th>
-                            <th className="px-4 py-3 text-right">Venda Dia</th>
-                            <th className="px-4 py-3 text-right">Venda (vs. Meta)</th>
-                            <th className="px-4 py-3 text-right">Ano Anterior</th>
-                            <th className="px-4 py-3 text-right">Projeção Fim de Mês</th>
-                            <th className="px-4 py-3 text-right">Margem (vs. Meta)</th>
-                            <th className="px-4 py-3 text-right">Compra (vs. Meta)</th>
-                            <th className="px-4 py-3 text-right">Compra Anual</th>
-                            <th className="px-4 py-3 text-right">Avaria (vs. Meta)</th>
-                            <th className="px-4 py-3 text-right">Estoque Atual</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading && (
-                            <tr>
-                                <td colSpan={10} className="px-4 py-8 text-center">
-                                    <Spinner className="mx-auto h-5 w-5" />
-                                </td>
-                            </tr>
-                        )}
+            {aba === 'promocoes' && <PromocoesConteudo />}
 
-                        {!loading &&
-                            linhas.map((row) => {
-                                const margemAtual = row.VENDA_ATUAL !== 0 ? row.LUCRO_ATUAL / row.VENDA_ATUAL : 0
-                                const percMeta = pct(row.VENDA_ATUAL, row.META_VENDA)
+            {aba === 'visao-geral' && (
+                <>
+                    {erro && <p className="text-sm text-red-base mb-4">{erro}</p>}
 
-                                return (
-                                    <tr
-                                        key={row.IDSECAO}
-                                        className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
-                                    >
-                                        <td className="px-4 py-2.5 font-medium">{row.DESCRSECAO}</td>
-                                        <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
-                                            {formatCurrency(row.VENDA_DIA)}
+                    <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+                        <table className="w-full min-w-[1250px] text-sm">
+                            <thead>
+                                <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
+                                    <th className="px-4 py-3">Seção</th>
+                                    <th className="px-4 py-3 text-right">Venda Dia</th>
+                                    <th className="px-4 py-3 text-right">Venda (vs. Meta)</th>
+                                    <th className="px-4 py-3 text-right">Ano Anterior</th>
+                                    <th className="px-4 py-3 text-right">Projeção Fim de Mês</th>
+                                    <th className="px-4 py-3 text-right">Margem (vs. Meta)</th>
+                                    <th className="px-4 py-3 text-right">Compra (vs. Meta)</th>
+                                    <th className="px-4 py-3 text-right">Compra Anual</th>
+                                    <th className="px-4 py-3 text-right">Avaria (vs. Meta)</th>
+                                    <th className="px-4 py-3 text-right">Estoque Atual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading && (
+                                    <tr>
+                                        <td colSpan={10} className="px-4 py-8 text-center">
+                                            <Spinner className="mx-auto h-5 w-5" />
                                         </td>
-                                        <CelulaValorMeta
-                                            valor={row.VENDA_ATUAL}
-                                            meta={row.META_VENDA}
-                                            formatValor={formatCurrency}
-                                            percentual={percMeta}
-                                        />
-                                        <td className="px-4 py-2.5 text-right">
-                                            <div className="text-gray-dark dark:text-dark-text-muted">
-                                                {formatCurrency(row.VENDA_ANO_ANTERIOR)}
-                                            </div>
-                                            <div
-                                                className={`text-xs font-medium ${
-                                                    row.VARIACAO_ANO_PCT === null
-                                                        ? 'text-gray-dark dark:text-dark-text-muted'
-                                                        : row.VARIACAO_ANO_PCT >= 0
-                                                          ? 'text-green-base'
-                                                          : 'text-red-base'
-                                                }`}
-                                            >
-                                                {row.VARIACAO_ANO_PCT === null ? '—' : formatPercent(row.VARIACAO_ANO_PCT)}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-2.5 text-right">{formatCurrency(row.PROJECAO_VENDA)}</td>
-                                        <CelulaValorMeta
-                                            valor={margemAtual}
-                                            meta={row.META_MARGEM_PCT / 100}
-                                            formatValor={formatPercent}
-                                        />
-                                        <CelulaValorMeta
-                                            valor={row.COMPRA_ATUAL}
-                                            meta={row.META_COMPRA}
-                                            formatValor={formatCurrency}
-                                            percentual={row.PERC_COMPRA_VENDA}
-                                        />
-                                        <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
-                                            {formatCurrency(row.COMPRA_ANUAL)}
-                                        </td>
-                                        <CelulaValorMeta
-                                            valor={row.AVARIA_ATUAL}
-                                            meta={row.META_AVARIA}
-                                            formatValor={formatCurrency}
-                                            menorEhMelhor
-                                        />
-                                        <td className="px-4 py-2.5 text-right">{formatCurrency(row.VALOR_ESTOQUE)}</td>
                                     </tr>
-                                )
-                            })}
+                                )}
 
-                        {!loading && linhas.length === 0 && (
-                            <tr>
-                                <td colSpan={10} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
-                                    Nenhum dado para o período selecionado.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                                {!loading &&
+                                    linhas.map((row) => {
+                                        const margemAtual = row.VENDA_ATUAL !== 0 ? row.LUCRO_ATUAL / row.VENDA_ATUAL : 0
+                                        const percMeta = pct(row.VENDA_ATUAL, row.META_VENDA)
 
-            {erroOperacional && <p className="text-sm text-red-base mt-4">{erroOperacional}</p>}
+                                        return (
+                                            <tr
+                                                key={row.IDSECAO}
+                                                className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
+                                            >
+                                                <td className="px-4 py-2.5 font-medium">{row.DESCRSECAO}</td>
+                                                <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
+                                                    {formatCurrency(row.VENDA_DIA)}
+                                                </td>
+                                                <CelulaValorMeta
+                                                    valor={row.VENDA_ATUAL}
+                                                    meta={row.META_VENDA}
+                                                    formatValor={formatCurrency}
+                                                    percentual={percMeta}
+                                                />
+                                                <td className="px-4 py-2.5 text-right">
+                                                    <div className="text-gray-dark dark:text-dark-text-muted">
+                                                        {formatCurrency(row.VENDA_ANO_ANTERIOR)}
+                                                    </div>
+                                                    <div
+                                                        className={`text-xs font-medium ${
+                                                            row.VARIACAO_ANO_PCT === null
+                                                                ? 'text-gray-dark dark:text-dark-text-muted'
+                                                                : row.VARIACAO_ANO_PCT >= 0
+                                                                  ? 'text-green-base'
+                                                                  : 'text-red-base'
+                                                        }`}
+                                                    >
+                                                        {row.VARIACAO_ANO_PCT === null ? '—' : formatPercent(row.VARIACAO_ANO_PCT)}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-2.5 text-right">{formatCurrency(row.PROJECAO_VENDA)}</td>
+                                                <CelulaValorMeta
+                                                    valor={margemAtual}
+                                                    meta={row.META_MARGEM_PCT / 100}
+                                                    formatValor={formatPercent}
+                                                />
+                                                <CelulaValorMeta
+                                                    valor={row.COMPRA_ATUAL}
+                                                    meta={row.META_COMPRA}
+                                                    formatValor={formatCurrency}
+                                                    percentual={row.PERC_COMPRA_VENDA}
+                                                />
+                                                <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
+                                                    {formatCurrency(row.COMPRA_ANUAL)}
+                                                </td>
+                                                <CelulaValorMeta
+                                                    valor={row.AVARIA_ATUAL}
+                                                    meta={row.META_AVARIA}
+                                                    formatValor={formatCurrency}
+                                                    menorEhMelhor
+                                                />
+                                                <td className="px-4 py-2.5 text-right">{formatCurrency(row.VALOR_ESTOQUE)}</td>
+                                            </tr>
+                                        )
+                                    })}
 
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <RankingList
-                    titulo="Perdas por fornecedor"
-                    loading={loadingOperacional}
-                    itens={(operacional?.perdas ?? []).map((p) => ({
-                        label: p.FORNECEDOR,
-                        quantidade: p.QUANTIDADE,
-                        valor: p.VALOR,
-                    }))}
-                />
-                <RankingList
-                    titulo="Avaria de estoque por fabricante"
-                    loading={loadingOperacional}
-                    itens={(operacional?.avaria ?? []).map((a) => ({
-                        label: a.FABRICANTE,
-                        quantidade: a.QUANTIDADE,
-                        valor: a.VALOR,
-                    }))}
-                />
-                <RankingList
-                    titulo="Pedidos de compra pendentes"
-                    loading={loadingOperacional}
-                    itens={(operacional?.pedidosPendentes ?? []).map((p) => ({
-                        label: `${p.FORNECEDOR} (${p.QTD_PEDIDOS} pedido${p.QTD_PEDIDOS === 1 ? '' : 's'})`,
-                        valor: p.VALOR_PENDENTE,
-                    }))}
-                />
-            </div>
+                                {!loading && linhas.length === 0 && (
+                                    <tr>
+                                        <td colSpan={10} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
+                                            Nenhum dado para o período selecionado.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {erroOperacional && <p className="text-sm text-red-base mt-4">{erroOperacional}</p>}
+
+                    <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        <RankingList
+                            titulo="Perdas por fornecedor"
+                            loading={loadingOperacional}
+                            itens={(operacional?.perdas ?? []).map((p) => ({
+                                label: p.FORNECEDOR,
+                                quantidade: p.QUANTIDADE,
+                                valor: p.VALOR,
+                            }))}
+                        />
+                        <RankingList
+                            titulo="Avaria de estoque por fabricante"
+                            loading={loadingOperacional}
+                            itens={(operacional?.avaria ?? []).map((a) => ({
+                                label: a.FABRICANTE,
+                                quantidade: a.QUANTIDADE,
+                                valor: a.VALOR,
+                            }))}
+                        />
+                        <RankingList
+                            titulo="Pedidos de compra pendentes"
+                            loading={loadingOperacional}
+                            itens={(operacional?.pedidosPendentes ?? []).map((p) => ({
+                                label: `${p.FORNECEDOR} (${p.QTD_PEDIDOS} pedido${p.QTD_PEDIDOS === 1 ? '' : 's'})`,
+                                valor: p.VALOR_PENDENTE,
+                            }))}
+                        />
+                    </div>
+                </>
+            )}
         </PageShell>
     )
 }

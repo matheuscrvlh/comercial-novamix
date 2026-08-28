@@ -4,8 +4,9 @@ import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
 import { buscarExcecoesMargem } from './margem.controller'
 import { comFiltroEcommerce, condicaoEcommerce, resolveFiliaisFisicas } from '../utils/filiais'
+import { condicaoMercadologica, type FiltroMercadologicoQuery } from '../utils/mercadologico'
 
-interface ResumoQuery {
+interface ResumoQuery extends FiltroMercadologicoQuery {
     inicio?: string
     fim?: string
     filiais?: string
@@ -61,13 +62,21 @@ export async function getDashboardResumo(req: FastifyRequest, res: FastifyReply)
 
     const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
     const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
+    const mercadologico = condicaoMercadologica(req.query as FiltroMercadologicoQuery)
 
     const vendaTotalSql = loadQueryComercial('venda_total.sql')
         .replaceAll('{{FILIAIS}}', filiaisStr)
         .replaceAll('{{ECOMMERCE}}', condicaoEcommerce(virtuais))
-    const estoqueNegativoSql = loadQueryComercial('estoque_negativo.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const pedidosPendentesSql = loadQueryComercial('pedidos_pendentes.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const perdasSql = loadQueryComercial('perdas_fornecedor.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const estoqueNegativoSql = loadQueryComercial('estoque_negativo.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const pedidosPendentesSql = loadQueryComercial('pedidos_pendentes.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const perdasSql = loadQueryComercial('perdas_fornecedor.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
 
     const conn = await connCiss()
     let vendaTotal: any[] = []

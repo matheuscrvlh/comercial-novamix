@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar'
 import Footer from '../components/Footer'
 import FiltersMenu from '../components/FiltersMenu'
 import FilialMultiFilter from '../components/FilialMultiFilter'
+import MercadologicoFilter, { type MercadologicoSelecao } from '../components/MercadologicoFilter'
 import DateRangeFilter from '../components/DateRangeFilter'
 import Spinner from '../components/Spinner'
 import StatCard from '../components/charts/StatCard'
@@ -20,6 +21,7 @@ import type {
     DashboardResumo,
     GestaoEstoqueListasData,
     OperacionalData,
+    PromocaoRow,
     ValidadeRow,
     VendaDiariaRow,
     VendaMetaSecaoRow,
@@ -70,43 +72,55 @@ export default function Home() {
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
     const [selecionadas, setSelecionadas] = useState<number[]>([])
+    const [mercadologico, setMercadologico] = useState<MercadologicoSelecao>({ divisoes: [], secoes: [], grupos: [] })
     const [metricaTendencia, setMetricaTendencia] = useState('venda')
 
     const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
     const mesano = mesanoDe(fim)
     const filiaisParam = filiaisAtivas.join(',')
+    const mercadologicoParams = {
+        divisoes: mercadologico.divisoes.join(','),
+        secoes: mercadologico.secoes.join(','),
+        grupos: mercadologico.grupos.join(','),
+    }
 
     const isAdmin = me?.isAdmin ?? false
     const temAcesso = me !== null
 
     const { data, loading, erro } = useApi<DashboardResumo>(
         '/dashboard/resumo',
-        { inicio, fim, filiais: filiaisParam, mesano },
+        { inicio, fim, filiais: filiaisParam, mesano, ...mercadologicoParams },
         temAcesso
     )
 
     const { data: vendaDiaria, loading: loadingVendaDiaria } = useApi<VendaDiariaRow[]>(
         '/comercial/venda-diaria',
-        { inicio, fim, filiais: filiaisParam },
+        { inicio, fim, filiais: filiaisParam, ...mercadologicoParams },
         isAdmin
     )
 
     const { data: vendaMetaSecao, loading: loadingMetaSecao } = useApi<VendaMetaSecaoRow[]>(
         '/comercial/venda-meta-secao',
-        { inicio, fim, filiais: filiaisParam, mesano },
+        { inicio, fim, filiais: filiaisParam, mesano, ...mercadologicoParams },
         isAdmin
     )
 
     const { data: operacional, loading: loadingOperacional } = useApi<OperacionalData>(
         '/comercial/operacional',
-        { inicio, fim, filiais: filiaisParam },
+        { inicio, fim, filiais: filiaisParam, ...mercadologicoParams },
         isAdmin
     )
 
     const { data: estoqueListas, loading: loadingEstoqueListas } = useApi<GestaoEstoqueListasData>(
         '/comercial/estoque-listas',
-        { filiais: filiaisParam },
+        { filiais: filiaisParam, ...mercadologicoParams },
+        isAdmin
+    )
+
+    const { data: promocoes, loading: loadingPromocoes } = useApi<PromocaoRow[]>(
+        '/promocoes',
+        { inicio, fim, filiais: filiaisParam },
         isAdmin
     )
 
@@ -117,6 +131,7 @@ export default function Home() {
             filiais: filiaisParam,
             vencimentoInicio: janelaVencimento.inicio,
             vencimentoFim: janelaVencimento.fim,
+            ...mercadologicoParams,
         },
         isAdmin
     )
@@ -181,6 +196,9 @@ export default function Home() {
     const somaValor = (itens: { VALATUALESTOQUE: number }[]) => itens.reduce((acc, i) => acc + i.VALATUALESTOQUE, 0)
     const valorVencendo = useMemo(() => (produtosVencendo ?? []).reduce((acc, p) => acc + p.VALOR_ESTIMADO, 0), [produtosVencendo])
 
+    const promocoesAtivas = useMemo(() => (promocoes ?? []).filter((p) => p.STATUS === 'ativa'), [promocoes])
+    const produtosEmPromocao = useMemo(() => promocoesAtivas.reduce((acc, p) => acc + p.QTD_PRODUTOS, 0), [promocoesAtivas])
+
     return (
         <div className='flex w-full min-h-screen bg-gray dark:bg-dark-bg'>
             <Sidebar isAdmin={isAdmin} />
@@ -221,6 +239,12 @@ export default function Home() {
                                         onChangeInicio={setInicio}
                                         onChangeFim={setFim}
                                     />
+                                </div>
+                                <div className='flex flex-col gap-2'>
+                                    <span className='text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted'>
+                                        Divisão / Seção / Grupo
+                                    </span>
+                                    <MercadologicoFilter selecao={mercadologico} onChange={setMercadologico} />
                                 </div>
                             </FiltersMenu>
 
@@ -304,7 +328,7 @@ export default function Home() {
                                         />
                                     </div>
 
-                                    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8'>
+                                    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-8'>
                                         <StatCard
                                             label='Comprar urgente'
                                             loading={loadingEstoqueListas}
@@ -331,6 +355,14 @@ export default function Home() {
                                             to='/estoque'
                                             corValor='text-orange-base'
                                             valor={formatCurrency(valorVencendo)}
+                                        />
+                                        <StatCard
+                                            label='Promoções ativas'
+                                            loading={loadingPromocoes}
+                                            to='/gestao-comercial?aba=promocoes'
+                                            corValor='text-green-base'
+                                            valor={`${formatNumber(promocoesAtivas.length)} promoções`}
+                                            rodape={`${formatNumber(produtosEmPromocao)} produtos`}
                                         />
                                     </div>
 

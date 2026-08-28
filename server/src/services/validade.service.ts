@@ -24,6 +24,9 @@ export interface ListarValidadeFiltros {
     lancamentoInicio?: string
     lancamentoFim?: string
     busca?: string
+    divisoes?: number[]
+    secoes?: number[]
+    grupos?: number[]
 }
 
 export async function listarValidade(filtros: ListarValidadeFiltros): Promise<ValidadeRow[]> {
@@ -48,6 +51,18 @@ export async function listarValidade(filtros: ListarValidadeFiltros): Promise<Va
     if (filtros.busca && filtros.busca.trim().length >= 3) {
         condicoes.push('UPPER(PV.DESCRICAOPRODUTO) LIKE UPPER(?)')
         params.push(`%${filtros.busca.trim()}%`)
+    }
+
+    if (filtros.divisoes && filtros.divisoes.length > 0) {
+        condicoes.push(`PV.IDDIVISAO IN (${filtros.divisoes.join(',')})`)
+    }
+
+    if (filtros.secoes && filtros.secoes.length > 0) {
+        condicoes.push(`PV.IDSECAO IN (${filtros.secoes.join(',')})`)
+    }
+
+    if (filtros.grupos && filtros.grupos.length > 0) {
+        condicoes.push(`PV.IDGRUPO IN (${filtros.grupos.join(',')})`)
     }
 
     const filtrosSql = condicoes.length > 0 ? `AND ${condicoes.join(' AND ')}` : ''

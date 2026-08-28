@@ -3,10 +3,11 @@ import { checkBranch, checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
 import { comFiltroEcommerce, resolveFiliaisFisicas } from '../utils/filiais'
+import { condicaoMercadologica, type FiltroMercadologicoQuery } from '../utils/mercadologico'
 
 const ADMIN_ACCESS = 'admin'
 
-interface ResumoQuery {
+interface ResumoQuery extends FiltroMercadologicoQuery {
     inicio?: string
     fim?: string
     filiais?: string
@@ -60,10 +61,15 @@ export async function getEstoqueResumo(req: FastifyRequest, res: FastifyReply) {
 
     const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
     const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
+    const mercadologico = condicaoMercadologica(req.query as FiltroMercadologicoQuery)
 
     const transferenciasSql = loadQueryComercial('transferencias_loja.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const negativoSql = loadQueryComercial('estoque_negativo.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const paradoSql = loadQueryComercial('estoque_parado.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const negativoSql = loadQueryComercial('estoque_negativo.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const paradoSql = loadQueryComercial('estoque_parado.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
 
     const conn = await connCiss()
     try {

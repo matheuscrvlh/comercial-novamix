@@ -13,6 +13,7 @@ import { fornecedoresRoutes } from './routes/fornecedores.routes.ts';
 import { inadimplenciasRoutes } from './routes/inadimplencias.routes.ts';
 import { validadeRoutes } from './routes/validade.routes.ts';
 import { cotacoesRoutes } from './routes/cotacoes.routes.ts';
+import { promocoesRoutes } from './routes/promocoes.routes.ts';
 import './database/supabase.database.ts';
 
 const app = fastify();
@@ -43,6 +44,7 @@ app.register(fornecedoresRoutes);
 app.register(inadimplenciasRoutes);
 app.register(validadeRoutes);
 app.register(cotacoesRoutes);
+app.register(promocoesRoutes);
 
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})

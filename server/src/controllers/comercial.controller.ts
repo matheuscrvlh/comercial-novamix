@@ -4,11 +4,12 @@ import { connCiss } from '../database/ciss.database'
 import { loadQueryComercial } from '../services/query.service'
 import { listMetasComFallback } from '../services/metas.service'
 import { comFiltroEcommerce, condicaoEcommerce, condicaoEcommerceOperador, resolveFiliaisFisicas } from '../utils/filiais'
+import { condicaoMercadologica, type FiltroMercadologicoQuery } from '../utils/mercadologico'
 import { DIVISOES_EXCLUIDAS_INATIVACAO } from '../constants/categoriasExcecaoInativacao'
 
 const ADMIN_ACCESS = 'admin'
 
-interface PeriodoQuery {
+interface PeriodoQuery extends FiltroMercadologicoQuery {
     inicio?: string
     fim?: string
     filiais?: string
@@ -146,12 +147,18 @@ export async function getVendaMetaSecao(req: FastifyRequest, res: FastifyReply) 
     const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
     const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
     const ecommerce = condicaoEcommerce(virtuais)
+    const mercadologico = condicaoMercadologica(req.query as FiltroMercadologicoQuery)
 
     const vendaSql = loadQueryComercial('venda_secao.sql')
         .replaceAll('{{FILIAIS}}', filiaisStr)
         .replaceAll('{{ECOMMERCE}}', ecommerce)
-    const estoqueSql = loadQueryComercial('estoque_secao.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const avariaSql = loadQueryComercial('avaria_secao.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const estoqueSql = loadQueryComercial('estoque_secao.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const avariaSql = loadQueryComercial('avaria_secao.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
 
     const hoje = hojeISO()
     const periodoAnoAnterior = { inicio: deslocarAno(periodo.inicio, 1), fim: deslocarAno(periodo.fim, 1) }
@@ -224,6 +231,21 @@ export async function getSecoes(req: FastifyRequest, res: FastifyReply) {
     if (!permission) return
 
     const sql = loadQueryComercial('secoes.sql')
+
+    const conn = await connCiss()
+    try {
+        const data = await conn.query(sql)
+        res.send(data)
+    } finally {
+        await conn.close()
+    }
+}
+
+export async function getHierarquiaMercadologica(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return
+
+    const sql = loadQueryComercial('hierarquia_mercadologica.sql')
 
     const conn = await connCiss()
     try {
@@ -350,10 +372,17 @@ export async function getOperacional(req: FastifyRequest, res: FastifyReply) {
 
     const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
     const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
+    const mercadologico = condicaoMercadologica(req.query as FiltroMercadologicoQuery)
 
-    const perdasSql = loadQueryComercial('perdas_fornecedor.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const avariaSql = loadQueryComercial('avaria_estoque.sql').replaceAll('{{FILIAIS}}', filiaisStr)
-    const pedidosPendentesSql = loadQueryComercial('pedidos_pendentes.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const perdasSql = loadQueryComercial('perdas_fornecedor.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const avariaSql = loadQueryComercial('avaria_estoque.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
+    const pedidosPendentesSql = loadQueryComercial('pedidos_pendentes.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
 
     const conn = await connCiss()
     try {
@@ -444,8 +473,12 @@ export async function getVendaDiaria(req: FastifyRequest, res: FastifyReply) {
     const virtuais = resolveFiliaisSelecionadas(req, filiaisLiberadas)
     const filiaisStr = resolveFiliaisFisicas(virtuais).join(',')
     const ecommerce = condicaoEcommerce(virtuais)
+    const mercadologico = condicaoMercadologica(req.query as FiltroMercadologicoQuery)
 
-    const sql = loadQueryComercial('venda_diaria.sql').replaceAll('{{FILIAIS}}', filiaisStr).replaceAll('{{ECOMMERCE}}', ecommerce)
+    const sql = loadQueryComercial('venda_diaria.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replaceAll('{{ECOMMERCE}}', ecommerce)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
 
     const periodoAnoAnterior = { inicio: deslocarAno(periodo.inicio, 1), fim: deslocarAno(periodo.fim, 1) }
     const diasAtual = gerarDias(periodo.inicio, periodo.fim)
@@ -504,7 +537,7 @@ function condicaoExclusaoCategorias() {
  * - inativar: sem venda e sem compra ha 90+ dias, exceto categorias em
  *   DIVISOES_EXCLUIDAS_INATIVACAO (sazonais / nao-alimentos)
  */
-interface EstoqueListasQuery {
+interface EstoqueListasQuery extends FiltroMercadologicoQuery {
     filiais?: string
     diasComprar?: string
     diasExcesso?: string
@@ -525,11 +558,15 @@ export async function getGestaoEstoqueListas(req: FastifyRequest, res: FastifyRe
 
     const hoje = hojeISO()
     const noventaDiasAtras = subtrairDias(hoje, 90)
+    const mercadologico = condicaoMercadologica(req.query as FiltroMercadologicoQuery)
 
-    const coberturaSql = loadQueryComercial('estoque_cobertura.sql').replaceAll('{{FILIAIS}}', filiaisStr)
+    const coberturaSql = loadQueryComercial('estoque_cobertura.sql')
+        .replaceAll('{{FILIAIS}}', filiaisStr)
+        .replace('{{MERCADOLOGICO}}', mercadologico)
     const inativarSql = loadQueryComercial('produtos_inativar.sql')
         .replaceAll('{{FILIAIS}}', filiaisStr)
         .replace('{{EXCLUSAO_CATEGORIAS}}', condicaoExclusaoCategorias())
+        .replace('{{MERCADOLOGICO}}', mercadologico)
 
     const conn = await connCiss()
     try {
