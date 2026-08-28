@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type FocusEvent } from 'react'
 import FiltersMenu from '../FiltersMenu'
 import FilialMultiFilter from '../FilialMultiFilter'
 import DateRangeFilter from '../DateRangeFilter'
@@ -6,6 +6,7 @@ import Spinner from '../Spinner'
 import Modal from '../Modal'
 import StatCard from '../charts/StatCard'
 import RankingBars from '../charts/RankingBars'
+import { CheckIcon, FilterIcon, TagIcon } from '../icons'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatDate, formatNumber, formatPercent } from '../../lib/format'
@@ -37,12 +38,90 @@ function StatusBadge({ status }: { status: StatusPromocao }) {
     )
 }
 
+const STATUS_OPCOES: StatusPromocao[] = ['ativa', 'futura', 'encerrada']
+
+function StatusFilterButton({
+    selecionados,
+    onChange,
+}: {
+    selecionados: StatusPromocao[]
+    onChange: (value: StatusPromocao[]) => void
+}) {
+    const [open, setOpen] = useState(false)
+
+    function toggle(status: StatusPromocao) {
+        if (selecionados.includes(status)) {
+            onChange(selecionados.filter((s) => s !== status))
+            return
+        }
+        onChange([...selecionados, status])
+    }
+
+    function fecharSeForaDoContainer(event: FocusEvent<HTMLDivElement>) {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+            setOpen(false)
+        }
+    }
+
+    return (
+        <div className="relative" onBlur={fecharSeForaDoContainer}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-label="Filtrar por status"
+                className="flex items-center gap-1.5 rounded-lg border border-gray-base/30 bg-white px-3 py-1.5 text-xs font-medium text-gray-text transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+            >
+                <FilterIcon className="h-3.5 w-3.5" />
+                Status
+                {selecionados.length > 0 && (
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-base px-1 text-[10px] font-semibold text-white">
+                        {selecionados.length}
+                    </span>
+                )}
+            </button>
+
+            {open && (
+                <div className="absolute right-0 z-10 mt-2 w-40 overflow-hidden rounded-lg border border-gray-base/30 bg-white shadow-lg dark:border-dark-border dark:bg-dark-surface">
+                    {selecionados.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => onChange([])}
+                            className="flex w-full items-center justify-between px-4 py-2 text-left text-xs font-medium text-gray-text transition hover:bg-gray dark:text-dark-text dark:hover:bg-dark-surface-2"
+                        >
+                            Limpar seleção
+                        </button>
+                    )}
+                    {STATUS_OPCOES.map((status) => {
+                        const ativo = selecionados.includes(status)
+                        return (
+                            <button
+                                key={status}
+                                type="button"
+                                onClick={() => toggle(status)}
+                                className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm font-medium transition ${
+                                    ativo
+                                        ? 'bg-orange-base/10 text-orange-base'
+                                        : 'text-gray-text hover:bg-gray dark:text-dark-text dark:hover:bg-dark-surface-2'
+                                }`}
+                            >
+                                {STATUS_LABEL[status]}
+                                {ativo && <CheckIcon className="h-4 w-4 shrink-0" />}
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
+        </div>
+    )
+}
+
 export default function PromocoesConteudo() {
     const { me } = useMe()
     const [selecionadas, setSelecionadas] = useState<number[]>([])
     const [inicio, setInicio] = useState(() => getRangeDias(14, 30).inicio)
     const [fim, setFim] = useState(() => getRangeDias(14, 30).fim)
     const [idPromocaoSelecionada, setIdPromocaoSelecionada] = useState<number | null>(null)
+    const [statusFiltro, setStatusFiltro] = useState<StatusPromocao[]>([])
 
     const branchesDisponiveis = comFiltroEcommerce(me?.branches ?? [])
     const filiaisAtivas = selecionadas.length > 0 ? selecionadas : branchesDisponiveis
@@ -71,6 +150,11 @@ export default function PromocoesConteudo() {
     const rankingProdutos = useMemo(
         () => [...promocoes].sort((a, b) => b.QTD_PRODUTOS - a.QTD_PRODUTOS),
         [promocoes]
+    )
+
+    const promocoesFiltradas = useMemo(
+        () => (statusFiltro.length === 0 ? promocoes : promocoes.filter((p) => statusFiltro.includes(p.STATUS))),
+        [promocoes, statusFiltro]
     )
 
     const produtosDetalhe = detalhe?.produtos ?? []
@@ -124,6 +208,11 @@ export default function PromocoesConteudo() {
                 />
             </div>
 
+            <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-text dark:text-dark-text">Lista de promoções</h3>
+                <StatusFilterButton selecionados={statusFiltro} onChange={setStatusFiltro} />
+            </div>
+
             <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[700px] text-sm">
                     <thead>
@@ -144,7 +233,7 @@ export default function PromocoesConteudo() {
                             </tr>
                         )}
                         {!loading &&
-                            promocoes.map((p) => (
+                            promocoesFiltradas.map((p) => (
                                 <tr
                                     key={p.IDPROMOCAO}
                                     onClick={() => setIdPromocaoSelecionada(p.IDPROMOCAO)}
@@ -161,10 +250,12 @@ export default function PromocoesConteudo() {
                                     </td>
                                 </tr>
                             ))}
-                        {!loading && promocoes.length === 0 && (
+                        {!loading && promocoesFiltradas.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
-                                    Nenhuma promoção no período selecionado.
+                                    {promocoes.length === 0
+                                        ? 'Nenhuma promoção no período selecionado.'
+                                        : 'Nenhuma promoção com o status selecionado.'}
                                 </td>
                             </tr>
                         )}
@@ -174,7 +265,12 @@ export default function PromocoesConteudo() {
 
             {idPromocaoSelecionada !== null && (
                 <Modal
-                    titulo={detalhe?.DESCRPROMOCAO ?? 'Promoção'}
+                    titulo={
+                        <span className="flex items-center gap-2">
+                            <TagIcon className="h-5 w-5 shrink-0 text-orange-base" />
+                            {detalhe?.DESCRPROMOCAO ?? 'Promoção'}
+                        </span>
+                    }
                     subtitulo={
                         detalhe
                             ? `${formatDataHora(detalhe.DTINIPROMOCAO)} a ${formatDataHora(detalhe.DTFIMPROMOCAO)} · ${detalhe.lojas

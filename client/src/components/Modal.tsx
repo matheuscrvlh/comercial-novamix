@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { CloseIcon } from './icons'
 
 type ModalProps = {
-    titulo: string
+    titulo: ReactNode
     subtitulo?: string
     onClose: () => void
     children: ReactNode
