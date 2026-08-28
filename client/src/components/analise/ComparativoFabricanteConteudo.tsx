@@ -1,23 +1,23 @@
 import { useState } from 'react'
-import PageShell from '../components/PageShell'
-import FiltersMenu from '../components/FiltersMenu'
-import FilialMultiFilter from '../components/FilialMultiFilter'
-import DateRangeFilter from '../components/DateRangeFilter'
-import Spinner from '../components/Spinner'
-import { useMe } from '../hooks/useMe'
-import { useApi } from '../hooks/useApi'
-import { formatCurrency, formatPercent } from '../lib/format'
-import { getPresetRange } from '../lib/date'
-import { comFiltroEcommerce } from '../constants/filiais'
-import type { ComparativoFabricanteRow, Fabricante } from '../types/comercial'
+import FiltersMenu from '../FiltersMenu'
+import FilialMultiFilter from '../FilialMultiFilter'
+import DateRangeFilter from '../DateRangeFilter'
+import Spinner from '../Spinner'
+import ProdutoCodigos from '../ProdutoCodigos'
+import { useMe } from '../../hooks/useMe'
+import { useApi } from '../../hooks/useApi'
+import { formatCurrency, formatPercent } from '../../lib/format'
+import { getPresetRange } from '../../lib/date'
+import { comFiltroEcommerce } from '../../constants/filiais'
+import type { ComparativoFabricanteRow, Fabricante } from '../../types/comercial'
 
 function variacao(atual: number, anterior: number) {
     if (anterior === 0) return null
     return (atual - anterior) / Math.abs(anterior)
 }
 
-export default function ComparativoFabricante() {
-    const { me, loading: loadingMe, error: meError } = useMe()
+export default function ComparativoFabricanteConteudo() {
+    const { me } = useMe()
 
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
@@ -29,11 +29,7 @@ export default function ComparativoFabricante() {
 
     const habilitado = me !== null && me.isAdmin
 
-    const { data: fabricantes, loading: loadingFabricantes } = useApi<Fabricante[]>(
-        '/comercial/fabricantes',
-        {},
-        habilitado
-    )
+    const { data: fabricantes, loading: loadingFabricantes } = useApi<Fabricante[]>('/comercial/fabricantes', {}, habilitado)
 
     const { data, loading, erro } = useApi<ComparativoFabricanteRow[]>(
         '/comercial/comparativo-fabricante',
@@ -44,48 +40,40 @@ export default function ComparativoFabricante() {
     const linhas = data ?? []
 
     return (
-        <PageShell
-            isAdmin={me?.isAdmin ?? false}
-            loadingMe={loadingMe}
-            meError={meError}
-            autorizado={me?.isAdmin ?? false}
-            titulo="Comparativo por Fabricante"
-            subtitulo="Venda e lucro por produto no período, comparados ao mesmo período nos dois anos anteriores."
-            filtros={
-                <FiltersMenu>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Fabricante
-                        </span>
-                        <select
-                            value={fabricante}
-                            onChange={(e) => setFabricante(e.target.value)}
-                            disabled={loadingFabricantes}
-                            className="w-64 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
-                        >
-                            <option value="">Selecione...</option>
-                            {(fabricantes ?? []).map((f) => (
-                                <option key={f.FABRICANTE} value={f.FABRICANTE}>
-                                    {f.FABRICANTE}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Filiais
-                        </span>
-                        <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Período
-                        </span>
-                        <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
-                    </div>
-                </FiltersMenu>
-            }
-        >
+        <>
+            <FiltersMenu>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Fabricante
+                    </span>
+                    <select
+                        value={fabricante}
+                        onChange={(e) => setFabricante(e.target.value)}
+                        disabled={loadingFabricantes}
+                        className="w-64 max-w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                    >
+                        <option value="">Selecione...</option>
+                        {(fabricantes ?? []).map((f) => (
+                            <option key={f.FABRICANTE} value={f.FABRICANTE}>
+                                {f.FABRICANTE}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Filiais
+                    </span>
+                    <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Período
+                    </span>
+                    <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
+                </div>
+            </FiltersMenu>
+
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
             {!fabricante && (
@@ -125,7 +113,10 @@ export default function ComparativoFabricante() {
                                             key={row.IDSUBPRODUTO}
                                             className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
                                         >
-                                            <td className="px-4 py-2.5 font-medium">{row.DESCRICAOPRODUTO}</td>
+                                            <td className="px-4 py-2.5 font-medium">
+                                                {row.DESCRICAOPRODUTO}
+                                                <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                            </td>
                                             <td className="px-4 py-2.5 text-right">{formatCurrency(row.VENDA_ATUAL)}</td>
                                             <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
                                                 {formatCurrency(row.VENDA_ANO_ANTERIOR)}
@@ -161,6 +152,6 @@ export default function ComparativoFabricante() {
                     </table>
                 </div>
             )}
-        </PageShell>
+        </>
     )
 }

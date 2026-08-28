@@ -27,6 +27,13 @@ function formatarPercentual(valor: number | null | undefined) {
     return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
 }
 
+function diasAte(dataISO: string) {
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const data = new Date(`${dataISO}T00:00:00`)
+    return Math.round((data.getTime() - hoje.getTime()) / 86400000)
+}
+
 const thClass = 'px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted'
 const tdClass = 'px-3 py-2 text-gray-text dark:text-dark-text'
 
@@ -107,33 +114,119 @@ export default function ProdutoDetalheModal({ idsubproduto, onClose }: ProdutoDe
 
                     <section>
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Estoque e preço por filial
+                            Estoque, preço e validade por filial
                         </h3>
                         <TabelaFilial>
                             <thead>
                                 <tr className="border-b border-gray-base/30 dark:border-dark-border">
                                     <th className={thClass}>Filial</th>
                                     <th className={`${thClass} text-right`}>Estoque</th>
-                                    <th className={`${thClass} text-right`}>Valor em estoque</th>
                                     <th className={`${thClass} text-right`}>Preço de venda</th>
+                                    <th className={`${thClass} text-right`}>Último custo</th>
+                                    <th className={`${thClass} text-right`}>Preço médio (vs. ano passado)</th>
+                                    <th className={thClass}>Última venda / cobertura</th>
+                                    <th className={thClass}>Validade mais próxima</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.estoquePreco.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="px-3 py-4 text-center text-gray-dark dark:text-dark-text-muted">
+                                        <td colSpan={7} className="px-3 py-4 text-center text-gray-dark dark:text-dark-text-muted">
                                             Sem dados de estoque/preço.
                                         </td>
                                     </tr>
                                 )}
-                                {data.estoquePreco.map((row) => (
-                                    <tr key={row.IDEMPRESA} className="border-b border-gray-base/10 last:border-0 dark:border-dark-border/60">
-                                        <td className={tdClass}>{nomeFilial(row.IDEMPRESA)}</td>
-                                        <td className={`${tdClass} text-right`}>{row.QTDATUALESTOQUE ?? '—'}</td>
-                                        <td className={`${tdClass} text-right`}>{formatarMoeda(row.VALATUALESTOQUE)}</td>
-                                        <td className={`${tdClass} text-right`}>{formatarMoeda(row.VALPRECOVENDA)}</td>
-                                    </tr>
-                                ))}
+                                {data.estoquePreco.map((row) => {
+                                    const vendaMargem = data.vendaMargem.find((v) => v.IDEMPRESA === row.IDEMPRESA)
+                                    const vendaAnoAnterior = data.vendaMargemAnoAnterior.find((v) => v.IDEMPRESA === row.IDEMPRESA)
+                                    const custo = data.ultimoCusto.find((c) => c.IDEMPRESA === row.IDEMPRESA)
+                                    const validade = data.validadeProxima.find((v) => v.IDEMPRESA === row.IDEMPRESA)
+
+                                    const qtdVendida90d = vendaMargem?.QTD_VENDIDA ?? 0
+                                    const diasEstoque =
+                                        row.QTDATUALESTOQUE != null && qtdVendida90d > 0
+                                            ? row.QTDATUALESTOQUE / (qtdVendida90d / 90)
+                                            : null
+
+                                    const precoMedioAtual =
+                                        vendaMargem && vendaMargem.QTD_VENDIDA > 0 ? vendaMargem.VENDA / vendaMargem.QTD_VENDIDA : null
+                                    const precoMedioAnterior =
+                                        vendaAnoAnterior && vendaAnoAnterior.QTD_VENDIDA > 0
+                                            ? vendaAnoAnterior.VENDA / vendaAnoAnterior.QTD_VENDIDA
+                                            : null
+                                    const variacaoPreco =
+                                        precoMedioAtual !== null && precoMedioAnterior !== null && precoMedioAnterior !== 0
+                                            ? (precoMedioAtual - precoMedioAnterior) / precoMedioAnterior
+                                            : null
+
+                                    const diasValidade = validade ? diasAte(validade.DTVALIDADE) : null
+
+                                    return (
+                                        <tr key={row.IDEMPRESA} className="border-b border-gray-base/10 last:border-0 dark:border-dark-border/60">
+                                            <td className={tdClass}>{nomeFilial(row.IDEMPRESA)}</td>
+                                            <td className={`${tdClass} text-right`}>
+                                                {row.QTDATUALESTOQUE ?? '—'}
+                                                <div className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                                    {formatarMoeda(row.VALATUALESTOQUE)}
+                                                </div>
+                                            </td>
+                                            <td className={`${tdClass} text-right`}>{formatarMoeda(row.VALPRECOVENDA)}</td>
+                                            <td className={`${tdClass} text-right`}>
+                                                {custo ? formatarMoeda(custo.VALCUSTOULTIMO) : '—'}
+                                                {custo && (
+                                                    <div className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                                        {formatarData(custo.DTULTIMACOMPRA)}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className={`${tdClass} text-right`}>
+                                                {precoMedioAtual === null ? '—' : formatarMoeda(precoMedioAtual)}
+                                                {precoMedioAnterior !== null && (
+                                                    <div
+                                                        className={`text-xs font-medium ${
+                                                            variacaoPreco === null
+                                                                ? 'text-gray-dark dark:text-dark-text-muted'
+                                                                : variacaoPreco >= 0
+                                                                  ? 'text-green-base'
+                                                                  : 'text-red-base'
+                                                        }`}
+                                                    >
+                                                        {formatarMoeda(precoMedioAnterior)}
+                                                        {variacaoPreco !== null && ` (${formatarPercentual(variacaoPreco * 100)})`}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className={tdClass}>
+                                                {formatarData(row.DTULTIMAVENDA)}
+                                                <div className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                                    {diasEstoque === null ? '—' : `${diasEstoque.toFixed(0)}d de cobertura`}
+                                                </div>
+                                            </td>
+                                            <td className={tdClass}>
+                                                {validade ? (
+                                                    <>
+                                                        <span
+                                                            className={
+                                                                diasValidade !== null && diasValidade <= 15
+                                                                    ? 'font-medium text-red-base'
+                                                                    : diasValidade !== null && diasValidade <= 30
+                                                                      ? 'font-medium text-orange-base'
+                                                                      : ''
+                                                            }
+                                                        >
+                                                            {formatarData(validade.DTVALIDADE)}
+                                                        </span>
+                                                        <div className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                                            {validade.QTDPRODUTO} un
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    '—'
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </TabelaFilial>
                     </section>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import PageShell from '../components/PageShell'
 import Spinner from '../components/Spinner'
+import ProdutoCodigos from '../components/ProdutoCodigos'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatPercent } from '../lib/format'
@@ -30,7 +31,7 @@ export default function Tributacao() {
             meError={meError}
             autorizado={me?.isAdmin ?? false}
             titulo="Tributação de Produtos"
-            subtitulo="Consulta de ICMS por produto (situação tributária, alíquota, substituição). Busque por nome do produto."
+            subtitulo="Consulta de ICMS por produto (situação tributária, alíquota, substituição). Busque por nome, código interno ou código de barras."
             filtros={
                 <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
                     <div className="flex flex-col gap-2">
@@ -41,7 +42,7 @@ export default function Tributacao() {
                             type="text"
                             value={campo}
                             onChange={(e) => setCampo(e.target.value)}
-                            placeholder="Ex: chocolate tablete talento"
+                            placeholder="Nome, código interno ou de barras"
                             className="w-80 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         />
                     </div>
@@ -88,7 +89,10 @@ export default function Tributacao() {
                                     key={row.IDSUBPRODUTO}
                                     className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
                                 >
-                                    <td className="px-4 py-2.5 font-medium">{row.DESCRICAOPRODUTO}</td>
+                                    <td className="px-4 py-2.5 font-medium">
+                                        {row.DESCRICAOPRODUTO}
+                                        <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                    </td>
                                     <td className="px-4 py-2.5 text-gray-dark dark:text-dark-text-muted">
                                         {row.FABRICANTE ?? '—'}
                                     </td>

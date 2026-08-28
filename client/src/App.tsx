@@ -1,15 +1,12 @@
 import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import GestaoComercial from './pages/GestaoComercial'
+import AnaliseComercial from './pages/AnaliseComercial'
 import Metas from './pages/Metas'
 import Tributacao from './pages/Tributacao'
-import EstoqueTransferencias from './pages/EstoqueTransferencias'
-import ComparativoFabricante from './pages/ComparativoFabricante'
-import AnaliseMargem from './pages/AnaliseMargem'
-import TicketOperador from './pages/TicketOperador'
+import Estoque from './pages/Estoque'
 import CatalogoProdutos from './pages/CatalogoProdutos'
-import Fornecedores from './pages/Fornecedores'
-import Inadimplencias from './pages/Inadimplencias'
+import FornecedoresVendedores from './pages/FornecedoresVendedores'
 
 export default function App() {
   return (
@@ -17,15 +14,12 @@ export default function App() {
       <Routes>
         <Route path='/' element={<Home />}/>
         <Route path='/gestao-comercial' element={<GestaoComercial />}/>
+        <Route path='/analise-comercial' element={<AnaliseComercial />}/>
         <Route path='/configuracoes' element={<Metas />}/>
         <Route path='/tributacao' element={<Tributacao />}/>
-        <Route path='/estoque-transferencias' element={<EstoqueTransferencias />}/>
-        <Route path='/comparativo-fabricante' element={<ComparativoFabricante />}/>
-        <Route path='/analise-margem' element={<AnaliseMargem />}/>
-        <Route path='/ticket-operador' element={<TicketOperador />}/>
-        <Route path='/catalogo-produtos' element={<CatalogoProdutos />}/>
-        <Route path='/fornecedores' element={<Fornecedores />}/>
-        <Route path='/inadimplencias' element={<Inadimplencias />}/>
+        <Route path='/estoque' element={<Estoque />}/>
+        <Route path='/produtos' element={<CatalogoProdutos />}/>
+        <Route path='/fornecedores-vendedores' element={<FornecedoresVendedores />}/>
       </Routes>
     </>
   )

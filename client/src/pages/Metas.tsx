@@ -4,6 +4,7 @@ import Spinner from '../components/Spinner'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { apiPost } from '../lib/api'
+import { comFiltroEcommerce, nomeFilial } from '../constants/filiais'
 import type { Secao, MetaSecao } from '../types/comercial'
 
 const IDEMPRESA_GERAL = 100
@@ -21,22 +22,33 @@ function inputParaMesano(valor: string) {
     return valor.replace('-', '')
 }
 
-type FormState = Record<number, { meta_venda: string; meta_margem_pct: string; meta_compra: string; meta_reducao_estoque_pct: string }>
+type FormState = Record<
+    number,
+    {
+        meta_venda: string
+        meta_margem_pct: string
+        meta_compra: string
+        meta_reducao_estoque_pct: string
+        meta_avaria: string
+    }
+>
 
 export default function Metas() {
     const { me, loading: loadingMe, error: meError } = useMe()
     const [mesano, setMesano] = useState(mesAtual())
+    const [idempresa, setIdempresa] = useState(IDEMPRESA_GERAL)
     const [salvandoId, setSalvandoId] = useState<number | null>(null)
     const [form, setForm] = useState<FormState>({})
 
     const habilitado = me !== null && me.isAdmin
+    const lojasDisponiveis = comFiltroEcommerce(me?.branches ?? [])
 
     const { data: secoes, loading: loadingSecoes } = useApi<Secao[]>('/comercial/secoes', {}, habilitado)
     const {
         data: metas,
         loading: loadingMetas,
         erro: metasErro,
-    } = useApi<MetaSecao[]>('/metas/secao', { mesano, idempresa: String(IDEMPRESA_GERAL) }, habilitado)
+    } = useApi<MetaSecao[]>('/metas/secao', { mesano, idempresa: String(idempresa) }, habilitado)
 
     useEffect(() => {
         if (!secoes) return
@@ -50,6 +62,7 @@ export default function Metas() {
                 meta_margem_pct: String(meta?.meta_margem_pct ?? 0),
                 meta_compra: String(meta?.meta_compra ?? 0),
                 meta_reducao_estoque_pct: String(meta?.meta_reducao_estoque_pct ?? 0),
+                meta_avaria: String(meta?.meta_avaria ?? 0),
             }
         })
         setForm(novoForm)
@@ -70,13 +83,14 @@ export default function Metas() {
         setSalvandoId(idsecao)
         try {
             await apiPost('/metas/secao', {
-                idempresa: IDEMPRESA_GERAL,
+                idempresa,
                 idsecao,
                 mesano,
                 meta_venda: Number(valores.meta_venda) || 0,
                 meta_margem_pct: Number(valores.meta_margem_pct) || 0,
                 meta_compra: Number(valores.meta_compra) || 0,
                 meta_reducao_estoque_pct: Number(valores.meta_reducao_estoque_pct) || 0,
+                meta_avaria: Number(valores.meta_avaria) || 0,
             })
         } finally {
             setSalvandoId(null)
@@ -84,7 +98,7 @@ export default function Metas() {
     }
 
     const inputClass =
-        'w-28 rounded-lg border border-gray-base/30 bg-white px-2 py-1.5 text-right text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+        'w-24 rounded-lg border border-gray-base/30 bg-white px-2 py-1.5 text-right text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
 
     const carregando = loadingSecoes || loadingMetas
 
@@ -95,31 +109,51 @@ export default function Metas() {
             meError={meError}
             autorizado={me?.isAdmin ?? false}
             titulo="Configurações"
-            subtitulo="Metas mensais de venda, margem, compra e redução de estoque por seção."
+            subtitulo="Metas mensais de venda, margem, compra, avaria e redução de estoque por seção, por loja."
             filtros={
-                <div className="mb-8 flex flex-col gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                        Mês de referência
-                    </span>
-                    <input
-                        type="month"
-                        value={mesanoParaInput(mesano)}
-                        onChange={(e) => setMesano(inputParaMesano(e.target.value))}
-                        className="w-48 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
-                    />
+                <div className="mb-8 flex flex-wrap gap-4">
+                    <div className="flex flex-col gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                            Loja
+                        </span>
+                        <select
+                            value={idempresa}
+                            onChange={(e) => setIdempresa(Number(e.target.value))}
+                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                        >
+                            <option value={IDEMPRESA_GERAL}>Geral (todas as lojas)</option>
+                            {lojasDisponiveis.map((id) => (
+                                <option key={id} value={id}>
+                                    {nomeFilial(id)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                            Mês de referência
+                        </span>
+                        <input
+                            type="month"
+                            value={mesanoParaInput(mesano)}
+                            onChange={(e) => setMesano(inputParaMesano(e.target.value))}
+                            className="w-48 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                        />
+                    </div>
                 </div>
             }
         >
             {metasErro && <p className="text-sm text-red-base mb-4">{metasErro}</p>}
 
             <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full min-w-[1050px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
                             <th className="px-4 py-3">Seção</th>
                             <th className="px-4 py-3 text-right">Meta Venda (R$)</th>
                             <th className="px-4 py-3 text-right">Meta Margem (%)</th>
                             <th className="px-4 py-3 text-right">Meta Compra (R$)</th>
+                            <th className="px-4 py-3 text-right">Meta Avaria (R$)</th>
                             <th className="px-4 py-3 text-right">Meta Redução Estoque (%)</th>
                             <th className="px-4 py-3"></th>
                         </tr>
@@ -127,7 +161,7 @@ export default function Metas() {
                     <tbody>
                         {carregando && (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center">
+                                <td colSpan={7} className="px-4 py-8 text-center">
                                     <Spinner className="mx-auto h-5 w-5" />
                                 </td>
                             </tr>
@@ -166,6 +200,14 @@ export default function Metas() {
                                                 className={inputClass}
                                                 value={valores.meta_compra}
                                                 onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_compra', e.target.value)}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            <input
+                                                type="number"
+                                                className={inputClass}
+                                                value={valores.meta_avaria}
+                                                onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_avaria', e.target.value)}
                                             />
                                         </td>
                                         <td className="px-4 py-2.5 text-right">

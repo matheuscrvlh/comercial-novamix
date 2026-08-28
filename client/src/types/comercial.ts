@@ -16,6 +16,17 @@ export interface DashboardResumo {
     perdasValor: number
 }
 
+export interface VendaDiariaRow {
+    DIA: number
+    DATA: string
+    VENDA_ATUAL: number
+    VENDA_ANO_ANTERIOR: number
+    LUCRO_ATUAL: number
+    LUCRO_ANO_ANTERIOR: number
+    COMPRA_ATUAL: number
+    COMPRA_ANO_ANTERIOR: number
+}
+
 export interface Secao {
     IDSECAO: number
     DESCRSECAO: string
@@ -32,6 +43,14 @@ export interface VendaMetaSecaoRow {
     META_MARGEM_PCT: number
     META_COMPRA: number
     META_REDUCAO_ESTOQUE_PCT: number
+    META_AVARIA: number
+    AVARIA_ATUAL: number
+    PERC_COMPRA_VENDA: number | null
+    COMPRA_ANUAL: number
+    VENDA_ANO_ANTERIOR: number
+    VARIACAO_ANO_PCT: number | null
+    PROJECAO_VENDA: number
+    VENDA_DIA: number
 }
 
 export interface MetaSecao {
@@ -43,6 +62,7 @@ export interface MetaSecao {
     meta_margem_pct: number
     meta_compra: number
     meta_reducao_estoque_pct: number
+    meta_avaria: number
 }
 
 export interface PerdaFornecedorRow {
@@ -72,6 +92,7 @@ export interface OperacionalData {
 export interface TributacaoRow {
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     FABRICANTE: string | null
     NCM: string | null
     IDEMPRESA: number
@@ -91,7 +112,9 @@ export interface TransferenciaLojaRow {
 export interface EstoqueNegativoRow {
     IDEMPRESA: number
     NOME_EMPRESA: string
+    IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     QTDATUALESTOQUE: number
     VALATUALESTOQUE: number
 }
@@ -99,7 +122,9 @@ export interface EstoqueNegativoRow {
 export interface EstoqueParadoRow {
     IDEMPRESA: number
     NOME_EMPRESA: string
+    IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     QTDATUALESTOQUE: number
     VALATUALESTOQUE: number
     DTULTIMAVENDA: string | null
@@ -111,6 +136,39 @@ export interface EstoqueResumoData {
     parado: EstoqueParadoRow[]
 }
 
+export interface EstoqueCoberturaRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
+    DESCRSECAO: string
+    QTDATUALESTOQUE: number
+    VALATUALESTOQUE: number
+    QTD_VENDIDA_90D: number
+    DIAS_COBERTURA: number
+}
+
+export interface ProdutoInativarRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
+    DESCRDIVISAO: string | null
+    DESCRSECAO: string | null
+    QTDATUALESTOQUE: number
+    VALATUALESTOQUE: number
+    DTULTIMAVENDA: string | null
+    DTULTIMACOMPRA: string | null
+}
+
+export interface GestaoEstoqueListasData {
+    comprarUrgente: EstoqueCoberturaRow[]
+    excessoEstoque: EstoqueCoberturaRow[]
+    inativar: ProdutoInativarRow[]
+}
+
 export interface Fabricante {
     FABRICANTE: string
 }
@@ -118,6 +176,7 @@ export interface Fabricante {
 export interface CatalogoProdutoRow {
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     FABRICANTE: string | null
     DESCRDIVISAO: string | null
     DESCRSECAO: string | null
@@ -146,6 +205,7 @@ export interface ProdutoMargemRow {
     IDSECAO: number
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     VENDA: number
     LUCRO: number
     MARGEM: number
@@ -156,6 +216,7 @@ export interface ProdutoMargemRow {
 export interface TicketOperadorRow {
     IDUSUARIO: number
     NOME_OPERADOR: string
+    IDEMPRESA: number
     TICKETS_POSITIVOS: number
     TICKETS_NEGATIVOS: number
     TOTAL_TICKETS: number
@@ -164,6 +225,7 @@ export interface TicketOperadorRow {
 export interface ComparativoFabricanteRow {
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     VENDA_ATUAL: number
     LUCRO_ATUAL: number
     VENDA_ANO_ANTERIOR: number
@@ -294,12 +356,53 @@ export interface ProdutoEstoquePrecoRow {
     QTDATUALESTOQUE: number | null
     VALATUALESTOQUE: number | null
     VALPRECOVENDA: number | null
+    DTULTIMAVENDA: string | null
 }
 
 export interface ProdutoVendaMargemRow {
     IDEMPRESA: number
     VENDA: number
     LUCRO: number
+    QTD_VENDIDA: number
+}
+
+export interface ValidadeRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
+    DTLANCAMENTO: string | null
+    DTVALIDADE: string
+    QTDPRODUTO: number
+    STATUS: string
+    OBSERVACAO: string | null
+    PRECOSUGERIDO: number
+    VALOR_ESTIMADO: number
+}
+
+export interface CotacaoConcorrenteRow {
+    IDEMPRESA: number
+    NOME_EMPRESA: string
+    IDSUBPRODUTO: number
+    DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
+    CONCORRENTE_NOME: string
+    PRECO_CONCORRENTE: number
+    PRECO_NOSSO: number | null
+    DATA_COTACAO: string
+}
+
+export interface ProdutoUltimoCustoRow {
+    IDEMPRESA: number
+    DTULTIMACOMPRA: string
+    VALCUSTOULTIMO: number
+}
+
+export interface ProdutoValidadeProximaRow {
+    IDEMPRESA: number
+    DTVALIDADE: string
+    QTDPRODUTO: number
 }
 
 export interface ProdutoDetalhe {
@@ -307,4 +410,7 @@ export interface ProdutoDetalhe {
     tributacao: ProdutoTributacaoRow[]
     estoquePreco: ProdutoEstoquePrecoRow[]
     vendaMargem: ProdutoVendaMargemRow[]
+    vendaMargemAnoAnterior: ProdutoVendaMargemRow[]
+    ultimoCusto: ProdutoUltimoCustoRow[]
+    validadeProxima: ProdutoValidadeProximaRow[]
 }

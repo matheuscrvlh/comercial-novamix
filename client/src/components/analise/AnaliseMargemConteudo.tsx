@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import PageShell from '../components/PageShell'
-import FiltersMenu from '../components/FiltersMenu'
-import FilialMultiFilter from '../components/FilialMultiFilter'
-import DateRangeFilter from '../components/DateRangeFilter'
-import Spinner from '../components/Spinner'
-import { useMe } from '../hooks/useMe'
-import { useApi } from '../hooks/useApi'
-import { formatCurrency, formatPercent } from '../lib/format'
-import { getPresetRange } from '../lib/date'
-import { comFiltroEcommerce } from '../constants/filiais'
-import type { FlagMargem, ProdutoMargemRow } from '../types/comercial'
+import FiltersMenu from '../FiltersMenu'
+import FilialMultiFilter from '../FilialMultiFilter'
+import DateRangeFilter from '../DateRangeFilter'
+import Spinner from '../Spinner'
+import ProdutoCodigos from '../ProdutoCodigos'
+import { useMe } from '../../hooks/useMe'
+import { useApi } from '../../hooks/useApi'
+import { formatCurrency, formatPercent } from '../../lib/format'
+import { getPresetRange } from '../../lib/date'
+import { comFiltroEcommerce } from '../../constants/filiais'
+import type { FlagMargem, ProdutoMargemRow } from '../../types/comercial'
 
 function mesanoDe(data: string) {
     return data.replace(/-\d{2}$/, '').replace('-', '')
@@ -29,8 +29,8 @@ const FLAG_CLASS: Record<FlagMargem, string> = {
     ZERO: 'bg-gray-dark/10 text-gray-dark dark:text-dark-text-muted',
 }
 
-export default function AnaliseMargem() {
-    const { me, loading: loadingMe, error: meError } = useMe()
+export default function AnaliseMargemConteudo() {
+    const { me } = useMe()
 
     const [inicio, setInicio] = useState(() => getPresetRange('hoje').inicio)
     const [fim, setFim] = useState(() => getPresetRange('hoje').fim)
@@ -51,30 +51,22 @@ export default function AnaliseMargem() {
     const linhas = data ?? []
 
     return (
-        <PageShell
-            isAdmin={me?.isAdmin ?? false}
-            loadingMe={loadingMe}
-            meError={meError}
-            autorizado={me?.isAdmin ?? false}
-            titulo="Análise de Margem"
-            subtitulo="Produtos com margem fora do esperado no período: negativa, zerada, muito acima ou abaixo da meta da seção."
-            filtros={
-                <FiltersMenu>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Filiais
-                        </span>
-                        <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Período
-                        </span>
-                        <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
-                    </div>
-                </FiltersMenu>
-            }
-        >
+        <>
+            <FiltersMenu>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Filiais
+                    </span>
+                    <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Período
+                    </span>
+                    <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
+                </div>
+            </FiltersMenu>
+
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
             <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
@@ -104,7 +96,10 @@ export default function AnaliseMargem() {
                                     key={row.IDSUBPRODUTO}
                                     className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
                                 >
-                                    <td className="px-4 py-2.5 font-medium">{row.DESCRICAOPRODUTO}</td>
+                                    <td className="px-4 py-2.5 font-medium">
+                                        {row.DESCRICAOPRODUTO}
+                                        <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                    </td>
                                     <td className="px-4 py-2.5 text-right">{formatCurrency(row.VENDA)}</td>
                                     <td
                                         className={`px-4 py-2.5 text-right ${row.LUCRO < 0 ? 'text-red-base' : 'text-gray-text dark:text-dark-text'}`}
@@ -140,6 +135,6 @@ export default function AnaliseMargem() {
                     </tbody>
                 </table>
             </div>
-        </PageShell>
+        </>
     )
 }

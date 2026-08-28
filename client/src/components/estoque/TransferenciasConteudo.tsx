@@ -1,18 +1,18 @@
 import { useState } from 'react'
-import PageShell from '../components/PageShell'
-import FiltersMenu from '../components/FiltersMenu'
-import FilialMultiFilter from '../components/FilialMultiFilter'
-import DateRangeFilter from '../components/DateRangeFilter'
-import Spinner from '../components/Spinner'
-import { useMe } from '../hooks/useMe'
-import { useApi } from '../hooks/useApi'
-import { formatCurrency, formatDate } from '../lib/format'
-import { getPresetRange } from '../lib/date'
-import { comFiltroEcommerce } from '../constants/filiais'
-import type { EstoqueResumoData } from '../types/comercial'
+import FiltersMenu from '../FiltersMenu'
+import FilialMultiFilter from '../FilialMultiFilter'
+import DateRangeFilter from '../DateRangeFilter'
+import Spinner from '../Spinner'
+import ProdutoCodigos from '../ProdutoCodigos'
+import { useMe } from '../../hooks/useMe'
+import { useApi } from '../../hooks/useApi'
+import { formatCurrency, formatDate } from '../../lib/format'
+import { getPresetRange } from '../../lib/date'
+import { comFiltroEcommerce } from '../../constants/filiais'
+import type { EstoqueResumoData } from '../../types/comercial'
 
-export default function EstoqueTransferencias() {
-    const { me, loading: loadingMe, error: meError } = useMe()
+export default function TransferenciasConteudo() {
+    const { me } = useMe()
 
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
@@ -34,30 +34,22 @@ export default function EstoqueTransferencias() {
     const parado = data?.parado ?? []
 
     return (
-        <PageShell
-            isAdmin={me?.isAdmin ?? false}
-            loadingMe={loadingMe}
-            meError={meError}
-            autorizado={me?.isAdmin ?? false}
-            titulo="Estoque & Transferências"
-            subtitulo="Transferências entre lojas, estoque negativo e produtos parados."
-            filtros={
-                <FiltersMenu>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Filiais
-                        </span>
-                        <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                            Período
-                        </span>
-                        <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
-                    </div>
-                </FiltersMenu>
-            }
-        >
+        <>
+            <FiltersMenu>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Filiais
+                    </span>
+                    <FilialMultiFilter branches={branchesDisponiveis} selected={filiaisAtivas} onChange={setSelecionadas} />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                        Período
+                    </span>
+                    <DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />
+                </div>
+            </FiltersMenu>
+
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
             <h2 className="mb-3 text-lg font-semibold text-gray-text dark:text-dark-text">Transferências entre lojas</h2>
@@ -138,7 +130,10 @@ export default function EstoqueTransferencias() {
                                             <td className="px-4 py-2 text-xs text-gray-dark dark:text-dark-text-muted">
                                                 {row.NOME_EMPRESA}
                                             </td>
-                                            <td className="px-4 py-2">{row.DESCRICAOPRODUTO}</td>
+                                            <td className="px-4 py-2">
+                                                {row.DESCRICAOPRODUTO}
+                                                <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                            </td>
                                             <td className="px-4 py-2 text-right font-medium text-red-base">
                                                 {row.QTDATUALESTOQUE}
                                             </td>
@@ -187,7 +182,10 @@ export default function EstoqueTransferencias() {
                                             <td className="px-4 py-2 text-xs text-gray-dark dark:text-dark-text-muted">
                                                 {row.NOME_EMPRESA}
                                             </td>
-                                            <td className="px-4 py-2">{row.DESCRICAOPRODUTO}</td>
+                                            <td className="px-4 py-2">
+                                                {row.DESCRICAOPRODUTO}
+                                                <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                            </td>
                                             <td className="px-4 py-2 text-right">{formatCurrency(row.VALATUALESTOQUE)}</td>
                                             <td className="px-4 py-2 text-xs text-gray-dark dark:text-dark-text-muted">
                                                 {row.DTULTIMAVENDA ? formatDate(row.DTULTIMAVENDA) : 'Nunca'}
@@ -206,6 +204,6 @@ export default function EstoqueTransferencias() {
                     </div>
                 </div>
             </div>
-        </PageShell>
+        </>
     )
 }

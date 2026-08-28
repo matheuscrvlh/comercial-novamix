@@ -16,28 +16,14 @@ const linkInactiveClass =
 const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-text-muted/40'
 
 type Pagina = { to: string; label: string }
-type GrupoPaginas = { titulo: string; paginas: Pagina[] }
 
-const GRUPOS_ADMIN: GrupoPaginas[] = [
-    {
-        titulo: 'Vendas & Margem',
-        paginas: [
-            { to: '/gestao-comercial', label: 'Gestão Comercial' },
-            { to: '/comparativo-fabricante', label: 'Comparativo por Fabricante' },
-            { to: '/analise-margem', label: 'Análise de Margem' },
-            { to: '/ticket-operador', label: 'Ticket por Operador' },
-        ],
-    },
-    {
-        titulo: 'Estoque & Fiscal',
-        paginas: [
-            { to: '/estoque-transferencias', label: 'Estoque & Transferências' },
-            { to: '/tributacao', label: 'Tributação' },
-            { to: '/catalogo-produtos', label: 'Catálogo de Produtos' },
-            { to: '/fornecedores', label: 'Fornecedores' },
-            { to: '/inadimplencias', label: 'Inadimplências' },
-        ],
-    },
+const PAGINAS_ADMIN: Pagina[] = [
+    { to: '/analise-comercial', label: 'Análise Comercial' },
+    { to: '/gestao-comercial', label: 'Gestão Comercial' },
+    { to: '/produtos', label: 'Produtos' },
+    { to: '/estoque', label: 'Estoque' },
+    { to: '/fornecedores-vendedores', label: 'Fornecedores e Vendedores' },
+    { to: '/tributacao', label: 'Fiscal' },
 ]
 
 const PAGINA_CONFIGURACOES: Pagina = { to: '/configuracoes', label: 'Configurações' }
@@ -108,7 +94,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
             >
                 <Logo compact />
 
-                <nav className='mt-4 flex flex-1 flex-col gap-5 overflow-y-auto px-4'>
+                <nav className='mt-4 flex flex-1 flex-col gap-2 overflow-y-auto px-4'>
                     <NavLink
                         to='/'
                         end
@@ -118,14 +104,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
                         Dashboard
                     </NavLink>
 
-                    {GRUPOS_ADMIN.map((grupo) => (
-                        <div key={grupo.titulo} className='flex flex-col gap-2'>
-                            <span className='px-1 text-xs font-semibold uppercase tracking-wide text-gray-dark/70 dark:text-dark-text-muted/70'>
-                                {grupo.titulo}
-                            </span>
-                            {grupo.paginas.map(renderPagina)}
-                        </div>
-                    ))}
+                    {PAGINAS_ADMIN.map(renderPagina)}
 
                     <div className='mt-auto flex flex-col gap-2 pt-2'>
                         {renderPagina(PAGINA_CONFIGURACOES)}

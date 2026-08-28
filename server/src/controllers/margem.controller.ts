@@ -56,6 +56,7 @@ export interface ProdutoMargem {
     IDSECAO: number
     IDSUBPRODUTO: number
     DESCRICAOPRODUTO: string
+    IDCODBARPROD: number | null
     VENDA: number
     LUCRO: number
     MARGEM: number
@@ -104,6 +105,7 @@ export async function buscarExcecoesMargem(
                 IDSECAO: p.IDSECAO,
                 IDSUBPRODUTO: p.IDSUBPRODUTO,
                 DESCRICAOPRODUTO: p.DESCRICAOPRODUTO,
+                IDCODBARPROD: p.IDCODBARPROD,
                 VENDA: venda,
                 LUCRO: lucro,
                 MARGEM: margem,

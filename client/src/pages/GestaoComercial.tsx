@@ -21,6 +21,41 @@ function pct(valor: number, meta: number) {
     return valor / meta
 }
 
+type CelulaValorMetaProps = {
+    valor: number
+    meta: number
+    formatValor: (n: number) => string
+    percentual?: number | null
+    menorEhMelhor?: boolean
+}
+
+/**
+ * Junta valor atual + meta + % na mesma celula (valor em cima, meta e % embaixo,
+ * cor indica se bateu a meta) em vez de 2-3 colunas separadas pra cada metrica -
+ * mesma informacao, tabela bem mais enxuta.
+ */
+function CelulaValorMeta({ valor, meta, formatValor, percentual, menorEhMelhor = false }: CelulaValorMetaProps) {
+    const temMeta = meta > 0
+    const bateuMeta = temMeta && (menorEhMelhor ? valor <= meta : valor >= meta)
+    const corValor = !temMeta
+        ? 'text-gray-text dark:text-dark-text'
+        : bateuMeta
+          ? 'text-green-base'
+          : 'text-red-base'
+
+    return (
+        <td className="px-4 py-2.5 text-right">
+            <div className={`font-medium ${corValor}`}>{formatValor(valor)}</div>
+            {temMeta && (
+                <div className="text-xs text-gray-dark dark:text-dark-text-muted">
+                    Meta {formatValor(meta)}
+                    {percentual !== null && percentual !== undefined && ` · ${formatPercent(percentual)}`}
+                </div>
+            )}
+        </td>
+    )
+}
+
 export default function GestaoComercial() {
     const { me, loading: loadingMe, error: meError } = useMe()
 
@@ -76,24 +111,25 @@ export default function GestaoComercial() {
             {erro && <p className="text-sm text-red-base mb-4">{erro}</p>}
 
             <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full min-w-[1250px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
                             <th className="px-4 py-3">Seção</th>
-                            <th className="px-4 py-3 text-right">Venda Atual</th>
-                            <th className="px-4 py-3 text-right">Meta Venda</th>
-                            <th className="px-4 py-3 text-right">% Meta</th>
-                            <th className="px-4 py-3 text-right">Margem Atual</th>
-                            <th className="px-4 py-3 text-right">Meta Margem</th>
-                            <th className="px-4 py-3 text-right">Compra Atual</th>
-                            <th className="px-4 py-3 text-right">Meta Compra</th>
+                            <th className="px-4 py-3 text-right">Venda Dia</th>
+                            <th className="px-4 py-3 text-right">Venda (vs. Meta)</th>
+                            <th className="px-4 py-3 text-right">Ano Anterior</th>
+                            <th className="px-4 py-3 text-right">Projeção Fim de Mês</th>
+                            <th className="px-4 py-3 text-right">Margem (vs. Meta)</th>
+                            <th className="px-4 py-3 text-right">Compra (vs. Meta)</th>
+                            <th className="px-4 py-3 text-right">Compra Anual</th>
+                            <th className="px-4 py-3 text-right">Avaria (vs. Meta)</th>
                             <th className="px-4 py-3 text-right">Estoque Atual</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading && (
                             <tr>
-                                <td colSpan={9} className="px-4 py-8 text-center">
+                                <td colSpan={10} className="px-4 py-8 text-center">
                                     <Spinner className="mx-auto h-5 w-5" />
                                 </td>
                             </tr>
@@ -110,29 +146,52 @@ export default function GestaoComercial() {
                                         className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
                                     >
                                         <td className="px-4 py-2.5 font-medium">{row.DESCRSECAO}</td>
-                                        <td className="px-4 py-2.5 text-right">{formatCurrency(row.VENDA_ATUAL)}</td>
                                         <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
-                                            {row.META_VENDA > 0 ? formatCurrency(row.META_VENDA) : '—'}
+                                            {formatCurrency(row.VENDA_DIA)}
                                         </td>
-                                        <td
-                                            className={`px-4 py-2.5 text-right font-medium ${
-                                                percMeta === null
-                                                    ? 'text-gray-dark dark:text-dark-text-muted'
-                                                    : percMeta >= 1
-                                                      ? 'text-green-base'
-                                                      : 'text-red-base'
-                                            }`}
-                                        >
-                                            {percMeta === null ? '—' : formatPercent(percMeta)}
+                                        <CelulaValorMeta
+                                            valor={row.VENDA_ATUAL}
+                                            meta={row.META_VENDA}
+                                            formatValor={formatCurrency}
+                                            percentual={percMeta}
+                                        />
+                                        <td className="px-4 py-2.5 text-right">
+                                            <div className="text-gray-dark dark:text-dark-text-muted">
+                                                {formatCurrency(row.VENDA_ANO_ANTERIOR)}
+                                            </div>
+                                            <div
+                                                className={`text-xs font-medium ${
+                                                    row.VARIACAO_ANO_PCT === null
+                                                        ? 'text-gray-dark dark:text-dark-text-muted'
+                                                        : row.VARIACAO_ANO_PCT >= 0
+                                                          ? 'text-green-base'
+                                                          : 'text-red-base'
+                                                }`}
+                                            >
+                                                {row.VARIACAO_ANO_PCT === null ? '—' : formatPercent(row.VARIACAO_ANO_PCT)}
+                                            </div>
                                         </td>
-                                        <td className="px-4 py-2.5 text-right">{formatPercent(margemAtual)}</td>
+                                        <td className="px-4 py-2.5 text-right">{formatCurrency(row.PROJECAO_VENDA)}</td>
+                                        <CelulaValorMeta
+                                            valor={margemAtual}
+                                            meta={row.META_MARGEM_PCT / 100}
+                                            formatValor={formatPercent}
+                                        />
+                                        <CelulaValorMeta
+                                            valor={row.COMPRA_ATUAL}
+                                            meta={row.META_COMPRA}
+                                            formatValor={formatCurrency}
+                                            percentual={row.PERC_COMPRA_VENDA}
+                                        />
                                         <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
-                                            {row.META_MARGEM_PCT > 0 ? formatPercent(row.META_MARGEM_PCT / 100) : '—'}
+                                            {formatCurrency(row.COMPRA_ANUAL)}
                                         </td>
-                                        <td className="px-4 py-2.5 text-right">{formatCurrency(row.COMPRA_ATUAL)}</td>
-                                        <td className="px-4 py-2.5 text-right text-gray-dark dark:text-dark-text-muted">
-                                            {row.META_COMPRA > 0 ? formatCurrency(row.META_COMPRA) : '—'}
-                                        </td>
+                                        <CelulaValorMeta
+                                            valor={row.AVARIA_ATUAL}
+                                            meta={row.META_AVARIA}
+                                            formatValor={formatCurrency}
+                                            menorEhMelhor
+                                        />
                                         <td className="px-4 py-2.5 text-right">{formatCurrency(row.VALOR_ESTOQUE)}</td>
                                     </tr>
                                 )
@@ -140,7 +199,7 @@ export default function GestaoComercial() {
 
                         {!loading && linhas.length === 0 && (
                             <tr>
-                                <td colSpan={9} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
+                                <td colSpan={10} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
                                     Nenhum dado para o período selecionado.
                                 </td>
                             </tr>

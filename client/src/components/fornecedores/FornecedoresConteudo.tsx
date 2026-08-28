@@ -1,12 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import PageShell from '../components/PageShell'
-import Spinner from '../components/Spinner'
-import Modal from '../components/Modal'
-import { PlusIcon, TrashIcon, PencilIcon } from '../components/icons'
-import { useMe } from '../hooks/useMe'
-import { useApi } from '../hooks/useApi'
-import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api'
-import type { Fornecedor, FornecedorCissRow, Vendedor } from '../types/comercial'
+import Spinner from '../Spinner'
+import Modal from '../Modal'
+import { PlusIcon, TrashIcon, PencilIcon, ChevronDownIcon } from '../icons'
+import { useMe } from '../../hooks/useMe'
+import { useApi } from '../../hooks/useApi'
+import { apiGet, apiPost, apiPut, apiDelete } from '../../lib/api'
+import type { Fornecedor, FornecedorCissRow, Vendedor } from '../../types/comercial'
 
 const inputClass =
     'w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
@@ -14,14 +13,14 @@ const labelClass = 'text-xs font-semibold uppercase tracking-wide text-gray-dark
 const botaoPrimario =
     'rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-light disabled:opacity-50'
 const botaoSecundario =
-    'rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border/30'
+    'rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-gray-text dark:hover:bg-dark-border/30'
 
-export default function Fornecedores() {
-    const { me, loading: loadingMe, error: meError } = useMe()
+export default function FornecedoresConteudo() {
+    const { me } = useMe()
     const [campo, setCampo] = useState('')
     const [busca, setBusca] = useState('')
     const [mostrarNovo, setMostrarNovo] = useState(false)
-    const [fornecedorAberto, setFornecedorAberto] = useState<number | null>(null)
+    const [expandidos, setExpandidos] = useState<Set<number>>(new Set())
 
     const habilitado = me !== null && me.isAdmin
 
@@ -33,36 +32,40 @@ export default function Fornecedores() {
         setBusca(campo)
     }
 
-    return (
-        <PageShell
-            isAdmin={me?.isAdmin ?? false}
-            loadingMe={loadingMe}
-            meError={meError}
-            autorizado={me?.isAdmin ?? false}
-            titulo="Fornecedores"
-            subtitulo="Fornecedores vinculados ao CISS e os vendedores/contatos de cada um, para sempre ter o contato à mão."
-            filtros={
-                <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
-                    <div className="flex flex-col gap-2">
-                        <span className={labelClass}>Buscar fornecedor</span>
-                        <input
-                            type="text"
-                            value={campo}
-                            onChange={(e) => setCampo(e.target.value)}
-                            placeholder="Nome, CNPJ ou vendedor"
-                            className={`${inputClass} w-72`}
-                        />
-                    </div>
-                    <button type="submit" className={botaoPrimario}>
-                        Buscar
-                    </button>
-                    <button type="button" onClick={() => setMostrarNovo(true)} className={`${botaoPrimario} flex items-center gap-1.5`}>
-                        <PlusIcon className="h-4 w-4" />
-                        Novo fornecedor
-                    </button>
-                </form>
+    function alternarExpandido(id: number) {
+        setExpandidos((atual) => {
+            const novo = new Set(atual)
+            if (novo.has(id)) {
+                novo.delete(id)
+            } else {
+                novo.add(id)
             }
-        >
+            return novo
+        })
+    }
+
+    return (
+        <>
+            <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-2">
+                    <span className={labelClass}>Buscar fornecedor</span>
+                    <input
+                        type="text"
+                        value={campo}
+                        onChange={(e) => setCampo(e.target.value)}
+                        placeholder="Nome, CNPJ ou vendedor"
+                        className={`${inputClass} w-72`}
+                    />
+                </div>
+                <button type="submit" className={botaoPrimario}>
+                    Buscar
+                </button>
+                <button type="button" onClick={() => setMostrarNovo(true)} className={`${botaoPrimario} flex items-center gap-1.5`}>
+                    <PlusIcon className="h-4 w-4" />
+                    Novo fornecedor
+                </button>
+            </form>
+
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
             {loading && (
@@ -77,31 +80,20 @@ export default function Fornecedores() {
                 </p>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {fornecedores.map((f) => (
-                    <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => setFornecedorAberto(f.id)}
-                        className="flex flex-col gap-1 rounded-xl border border-gray-base/30 bg-white p-4 text-left shadow-sm transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface"
-                    >
-                        <div className="flex items-start justify-between gap-2">
-                            <span className="font-semibold text-gray-text dark:text-dark-text">{f.NOME}</span>
-                            {f.FLAGINATIVO === 'T' && (
-                                <span className="shrink-0 rounded-full bg-red-base/10 px-2 py-0.5 text-xs font-medium text-red-base">
-                                    Inativo no CISS
-                                </span>
-                            )}
-                        </div>
-                        {f.NOMEFANTASIA && <span className="text-xs text-gray-dark dark:text-dark-text-muted">{f.NOMEFANTASIA}</span>}
-                        <span className="mt-2 text-xs text-gray-dark dark:text-dark-text-muted">
-                            {f.vendedores.length === 0
-                                ? 'Nenhum vendedor cadastrado'
-                                : `${f.vendedores.length} vendedor${f.vendedores.length > 1 ? 'es' : ''}`}
-                        </span>
-                    </button>
-                ))}
-            </div>
+            {!loading && fornecedores.length > 0 && (
+                <div className="overflow-hidden rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+                    {fornecedores.map((f) => (
+                        <FornecedorLinha
+                            key={f.id}
+                            fornecedor={f}
+                            expandido={expandidos.has(f.id)}
+                            onToggle={() => alternarExpandido(f.id)}
+                            onAlterado={recarregar}
+                            onRemovido={recarregar}
+                        />
+                    ))}
+                </div>
+            )}
 
             {mostrarNovo && (
                 <NovoFornecedorModal
@@ -112,19 +104,7 @@ export default function Fornecedores() {
                     }}
                 />
             )}
-
-            {fornecedorAberto !== null && (
-                <FornecedorDetalheModal
-                    fornecedor={fornecedores.find((f) => f.id === fornecedorAberto) ?? null}
-                    onClose={() => setFornecedorAberto(null)}
-                    onAlterado={recarregar}
-                    onRemovido={() => {
-                        setFornecedorAberto(null)
-                        recarregar()
-                    }}
-                />
-            )}
-        </PageShell>
+        </>
     )
 }
 
@@ -246,14 +226,16 @@ function NovoFornecedorModal({ onClose, onCriado }: { onClose: () => void; onCri
     )
 }
 
-function FornecedorDetalheModal({
+function FornecedorLinha({
     fornecedor,
-    onClose,
+    expandido,
+    onToggle,
     onAlterado,
     onRemovido,
 }: {
-    fornecedor: Fornecedor | null
-    onClose: () => void
+    fornecedor: Fornecedor
+    expandido: boolean
+    onToggle: () => void
     onAlterado: () => void
     onRemovido: () => void
 }) {
@@ -261,7 +243,6 @@ function FornecedorDetalheModal({
     const [vendedorEditando, setVendedorEditando] = useState<Vendedor | null>(null)
     const [removendoFornecedor, setRemovendoFornecedor] = useState(false)
 
-    if (!fornecedor) return null
     const f = fornecedor
 
     async function excluirVendedor(id: number) {
@@ -282,98 +263,132 @@ function FornecedorDetalheModal({
     }
 
     return (
-        <Modal titulo={fornecedor.NOME} subtitulo={fornecedor.NOMEFANTASIA ?? undefined} onClose={onClose} largura="lg">
-            <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-                <Campo label="CNPJ/CPF" valor={fornecedor.CNPJCPF ?? '—'} />
-                <Campo label="Telefone" valor={fornecedor.FONE1 || fornecedor.FONE2 || '—'} />
-                <Campo label="Celular" valor={fornecedor.FONECELULAR || '—'} />
-                <Campo label="E-mail" valor={fornecedor.EMAIL || '—'} />
-                <Campo label="Contato (CISS)" valor={fornecedor.NOMECONTATO1 || fornecedor.NOMECONTATO2 || '—'} />
-                <Campo label="Endereço" valor={fornecedor.ENDERECO ? `${fornecedor.ENDERECO}, ${fornecedor.BAIRRO ?? ''} - ${fornecedor.UFCLIFOR ?? ''}` : '—'} />
-            </div>
+        <div className="border-b border-gray-base/30 last:border-0 dark:border-dark-border">
+            <button
+                type="button"
+                onClick={onToggle}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-gray-base/5 dark:hover:bg-dark-border/20"
+            >
+                <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-gray-text dark:text-dark-text">{f.NOME}</span>
+                        {f.NOMEFANTASIA && (
+                            <span className="text-xs text-gray-dark dark:text-dark-text-muted">({f.NOMEFANTASIA})</span>
+                        )}
+                        {f.FLAGINATIVO === 'T' && (
+                            <span className="shrink-0 rounded-full bg-red-base/10 px-2 py-0.5 text-xs font-medium text-red-base">
+                                Inativo no CISS
+                            </span>
+                        )}
+                    </div>
+                    <span className="text-xs text-gray-dark dark:text-dark-text-muted">
+                        {f.vendedores.length === 0
+                            ? 'Nenhum vendedor cadastrado'
+                            : `${f.vendedores.length} vendedor${f.vendedores.length > 1 ? 'es' : ''}`}
+                    </span>
+                </div>
+                <ChevronDownIcon
+                    className={`h-5 w-5 shrink-0 text-gray-dark transition-transform dark:text-dark-text-muted ${expandido ? 'rotate-180' : ''}`}
+                />
+            </button>
 
-            <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
-                    Vendedores / contatos
-                </h3>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setVendedorEditando(null)
-                        setMostrarForm(true)
-                    }}
-                    className={`${botaoPrimario} flex items-center gap-1.5 px-3! py-1.5! text-xs`}
-                >
-                    <PlusIcon className="h-3.5 w-3.5" />
-                    Adicionar
-                </button>
-            </div>
+            {expandido && (
+                <div className="border-t border-gray-base/20 bg-gray-base/5 px-4 py-4 dark:border-dark-border/60 dark:bg-dark-bg/30">
+                    <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                        <Campo label="CNPJ/CPF" valor={f.CNPJCPF ?? '—'} />
+                        <Campo label="Telefone" valor={f.FONE1 || f.FONE2 || '—'} />
+                        <Campo label="Celular" valor={f.FONECELULAR || '—'} />
+                        <Campo label="E-mail" valor={f.EMAIL || '—'} />
+                        <Campo label="Contato (CISS)" valor={f.NOMECONTATO1 || f.NOMECONTATO2 || '—'} />
+                        <Campo label="Endereço" valor={f.ENDERECO ? `${f.ENDERECO}, ${f.BAIRRO ?? ''} - ${f.UFCLIFOR ?? ''}` : '—'} />
+                    </div>
 
-            {fornecedor.vendedores.length === 0 && (
-                <p className="mb-4 text-sm text-gray-dark dark:text-dark-text-muted">Nenhum vendedor cadastrado ainda.</p>
+                    <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
+                            Vendedores / contatos
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setVendedorEditando(null)
+                                setMostrarForm(true)
+                            }}
+                            className={`${botaoPrimario} flex items-center gap-1.5 px-3! py-1.5! text-xs`}
+                        >
+                            <PlusIcon className="h-3.5 w-3.5" />
+                            Adicionar
+                        </button>
+                    </div>
+
+                    {f.vendedores.length === 0 && (
+                        <p className="mb-4 text-sm text-gray-dark dark:text-dark-text-muted">Nenhum vendedor cadastrado ainda.</p>
+                    )}
+
+                    <ul className="mb-5 flex flex-col gap-2">
+                        {f.vendedores.map((v) => (
+                            <li
+                                key={v.id}
+                                className="flex items-start justify-between gap-3 rounded-lg border border-gray-base/30 bg-white px-3 py-2 dark:border-dark-border dark:bg-dark-surface"
+                            >
+                                <div className="min-w-0 text-sm">
+                                    <p className="font-medium text-gray-text dark:text-dark-text">
+                                        {v.nome}
+                                        {v.cargo && (
+                                            <span className="ml-2 text-xs font-normal text-gray-dark dark:text-dark-text-muted">
+                                                {v.cargo}
+                                            </span>
+                                        )}
+                                        {!v.ativo && (
+                                            <span className="ml-2 rounded-full bg-red-base/10 px-2 py-0.5 text-xs font-medium text-red-base">
+                                                Inativo
+                                            </span>
+                                        )}
+                                    </p>
+                                    <p className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                        {[v.telefone, v.whatsapp && `WhatsApp: ${v.whatsapp}`, v.email].filter(Boolean).join(' · ') ||
+                                            'Sem contato informado'}
+                                    </p>
+                                    {v.observacoes && <p className="mt-1 text-xs text-gray-dark dark:text-dark-text-muted">{v.observacoes}</p>}
+                                </div>
+                                <div className="flex shrink-0 gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setVendedorEditando(v)
+                                            setMostrarForm(true)
+                                        }}
+                                        className="rounded-lg p-1.5 text-gray-dark transition hover:bg-gray-base/10 dark:text-dark-text-muted dark:hover:bg-dark-border/30"
+                                    >
+                                        <PencilIcon className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => excluirVendedor(v.id)}
+                                        className="rounded-lg p-1.5 text-red-base transition hover:bg-red-base/10"
+                                    >
+                                        <TrashIcon className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="flex justify-end border-t border-gray-base/20 pt-3 dark:border-dark-border/60">
+                        <button
+                            type="button"
+                            onClick={excluirFornecedor}
+                            disabled={removendoFornecedor}
+                            className="text-sm font-medium text-red-base transition hover:underline disabled:opacity-50"
+                        >
+                            Remover fornecedor do catálogo
+                        </button>
+                    </div>
+                </div>
             )}
-
-            <ul className="mb-5 flex flex-col gap-2">
-                {fornecedor.vendedores.map((v) => (
-                    <li
-                        key={v.id}
-                        className="flex items-start justify-between gap-3 rounded-lg border border-gray-base/30 px-3 py-2 dark:border-dark-border"
-                    >
-                        <div className="min-w-0 text-sm">
-                            <p className="font-medium text-gray-text dark:text-dark-text">
-                                {v.nome}
-                                {v.cargo && <span className="ml-2 text-xs font-normal text-gray-dark dark:text-dark-text-muted">{v.cargo}</span>}
-                                {!v.ativo && (
-                                    <span className="ml-2 rounded-full bg-red-base/10 px-2 py-0.5 text-xs font-medium text-red-base">
-                                        Inativo
-                                    </span>
-                                )}
-                            </p>
-                            <p className="text-xs text-gray-dark dark:text-dark-text-muted">
-                                {[v.telefone, v.whatsapp && `WhatsApp: ${v.whatsapp}`, v.email].filter(Boolean).join(' · ') || 'Sem contato informado'}
-                            </p>
-                            {v.observacoes && <p className="mt-1 text-xs text-gray-dark dark:text-dark-text-muted">{v.observacoes}</p>}
-                        </div>
-                        <div className="flex shrink-0 gap-1">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setVendedorEditando(v)
-                                    setMostrarForm(true)
-                                }}
-                                className="rounded-lg p-1.5 text-gray-dark transition hover:bg-gray-base/10 dark:text-dark-text-muted dark:hover:bg-dark-border/30"
-                            >
-                                <PencilIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => excluirVendedor(v.id)}
-                                className="rounded-lg p-1.5 text-red-base transition hover:bg-red-base/10"
-                            >
-                                <TrashIcon className="h-4 w-4" />
-                            </button>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-
-            <div className="flex justify-between border-t border-gray-base/30 pt-4 dark:border-dark-border">
-                <button
-                    type="button"
-                    onClick={excluirFornecedor}
-                    disabled={removendoFornecedor}
-                    className="text-sm font-medium text-red-base transition hover:underline disabled:opacity-50"
-                >
-                    Remover fornecedor do catálogo
-                </button>
-                <button type="button" onClick={onClose} className={botaoSecundario}>
-                    Fechar
-                </button>
-            </div>
 
             {mostrarForm && (
                 <VendedorFormModal
-                    fornecedorId={fornecedor.id}
+                    fornecedorId={f.id}
                     vendedor={vendedorEditando}
                     onClose={() => setMostrarForm(false)}
                     onSalvo={() => {
@@ -382,7 +397,7 @@ function FornecedorDetalheModal({
                     }}
                 />
             )}
-        </Modal>
+        </div>
     )
 }
 

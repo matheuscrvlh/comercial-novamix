@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import PageShell from '../components/PageShell'
-import Spinner from '../components/Spinner'
-import Modal from '../components/Modal'
-import { PlusIcon, TrashIcon, PencilIcon } from '../components/icons'
-import { useMe } from '../hooks/useMe'
-import { useApi } from '../hooks/useApi'
-import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api'
-import { FILIAIS, nomeFilial } from '../constants/filiais'
-import type { Fornecedor, Inadimplencia, InadimplenciaInput, ResumoFornecedorInadimplencia, StatusInadimplencia } from '../types/comercial'
+import Spinner from '../Spinner'
+import Modal from '../Modal'
+import { PlusIcon, TrashIcon, PencilIcon } from '../icons'
+import { useMe } from '../../hooks/useMe'
+import { useApi } from '../../hooks/useApi'
+import { apiGet, apiPost, apiPut, apiDelete } from '../../lib/api'
+import { FILIAIS, nomeFilial } from '../../constants/filiais'
+import type { Fornecedor, Inadimplencia, InadimplenciaInput, ResumoFornecedorInadimplencia, StatusInadimplencia } from '../../types/comercial'
 
 const inputClass =
     'w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
@@ -15,7 +14,7 @@ const labelClass = 'text-xs font-semibold uppercase tracking-wide text-gray-dark
 const botaoPrimario =
     'rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-light disabled:opacity-50'
 const botaoSecundario =
-    'rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border/30'
+    'rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-gray-text dark:hover:bg-dark-border/30'
 
 const STATUS_LABEL: Record<StatusInadimplencia, string> = {
     pendente: 'Pendente',
@@ -42,14 +41,41 @@ function formatarData(valor: string | null) {
     return `${dia}/${mes}/${ano}`
 }
 
-export default function Inadimplencias() {
-    const { me, loading: loadingMe, error: meError } = useMe()
+type Ordenacao = 'vencimento_asc' | 'vencimento_desc' | 'saldo_desc' | 'saldo_asc' | 'fornecedor_asc'
+
+const ORDENACAO_LABEL: Record<Ordenacao, string> = {
+    vencimento_asc: 'Vencimento (mais próximo)',
+    vencimento_desc: 'Vencimento (mais distante)',
+    saldo_desc: 'Maior saldo devido',
+    saldo_asc: 'Menor saldo devido',
+    fornecedor_asc: 'Fornecedor (A-Z)',
+}
+
+function ordenar(linhas: Inadimplencia[], ordenacao: Ordenacao): Inadimplencia[] {
+    const copia = [...linhas]
+    switch (ordenacao) {
+        case 'vencimento_asc':
+            return copia.sort((a, b) => (a.data_vencimento ?? '9999-99-99').localeCompare(b.data_vencimento ?? '9999-99-99'))
+        case 'vencimento_desc':
+            return copia.sort((a, b) => (b.data_vencimento ?? '0000-00-00').localeCompare(a.data_vencimento ?? '0000-00-00'))
+        case 'saldo_desc':
+            return copia.sort((a, b) => Number(b.saldo_devido) - Number(a.saldo_devido))
+        case 'saldo_asc':
+            return copia.sort((a, b) => Number(a.saldo_devido) - Number(b.saldo_devido))
+        case 'fornecedor_asc':
+            return copia.sort((a, b) => a.fornecedor_nome.localeCompare(b.fornecedor_nome))
+    }
+}
+
+export default function InadimplenciasConteudo() {
+    const { me } = useMe()
     const habilitado = me !== null && me.isAdmin
 
     const [campo, setCampo] = useState('')
     const [busca, setBusca] = useState('')
     const [status, setStatus] = useState('')
     const [fornecedorId, setFornecedorId] = useState('')
+    const [ordenacao, setOrdenacao] = useState<Ordenacao>('vencimento_asc')
     const [mostrarForm, setMostrarForm] = useState(false)
     const [editando, setEditando] = useState<Inadimplencia | null>(null)
 
@@ -57,11 +83,8 @@ export default function Inadimplencias() {
     const { data, loading, erro, recarregar } = useInadimplencias({ busca, status, fornecedorId }, habilitado)
     const { data: resumo } = useResumo(habilitado)
 
-    const linhas = data ?? []
-    const totalDevido = useMemo(
-        () => (resumo ?? []).reduce((acc, r) => acc + Number(r.total_devido), 0),
-        [resumo]
-    )
+    const linhas = ordenar(data ?? [], ordenacao)
+    const totalDevido = useMemo(() => (resumo ?? []).reduce((acc, r) => acc + Number(r.total_devido), 0), [resumo])
 
     function buscar(e: FormEvent) {
         e.preventDefault()
@@ -75,68 +98,70 @@ export default function Inadimplencias() {
     }
 
     return (
-        <PageShell
-            isAdmin={me?.isAdmin ?? false}
-            loadingMe={loadingMe}
-            meError={meError}
-            autorizado={me?.isAdmin ?? false}
-            titulo="Inadimplências"
-            subtitulo="Títulos em aberto com fornecedores, vinculados ao cadastro de fornecedores e vendedores."
-            filtros={
-                <form onSubmit={buscar} className="mb-6 flex flex-wrap items-end gap-3">
-                    <div className="flex flex-col gap-2">
-                        <span className={labelClass}>Buscar</span>
-                        <input
-                            type="text"
-                            value={campo}
-                            onChange={(e) => setCampo(e.target.value)}
-                            placeholder="Fornecedor ou título"
-                            className={`${inputClass} w-64`}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className={labelClass}>Fornecedor</span>
-                        <select
-                            value={fornecedorId}
-                            onChange={(e) => setFornecedorId(e.target.value)}
-                            className={`${inputClass} w-56`}
-                        >
-                            <option value="">Todos</option>
-                            {(fornecedores ?? []).map((f) => (
-                                <option key={f.id} value={f.id}>
-                                    {f.NOME}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className={labelClass}>Status</span>
-                        <select value={status} onChange={(e) => setStatus(e.target.value)} className={`${inputClass} w-40`}>
-                            <option value="">Todos</option>
-                            {Object.entries(STATUS_LABEL).map(([valor, label]) => (
-                                <option key={valor} value={valor}>
-                                    {label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <button type="submit" className={botaoPrimario}>
-                        Buscar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setEditando(null)
-                            setMostrarForm(true)
-                        }}
-                        className={`${botaoPrimario} flex items-center gap-1.5`}
+        <>
+            <form onSubmit={buscar} className="mb-6 flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-2">
+                    <span className={labelClass}>Buscar</span>
+                    <input
+                        type="text"
+                        value={campo}
+                        onChange={(e) => setCampo(e.target.value)}
+                        placeholder="Fornecedor ou título"
+                        className={`${inputClass} w-64`}
+                    />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className={labelClass}>Fornecedor</span>
+                    <select value={fornecedorId} onChange={(e) => setFornecedorId(e.target.value)} className={`${inputClass} w-56`}>
+                        <option value="">Todos</option>
+                        {(fornecedores ?? []).map((f) => (
+                            <option key={f.id} value={f.id}>
+                                {f.NOME}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className={labelClass}>Status</span>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className={`${inputClass} w-40`}>
+                        <option value="">Todos</option>
+                        {Object.entries(STATUS_LABEL).map(([valor, label]) => (
+                            <option key={valor} value={valor}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className={labelClass}>Ordenar por</span>
+                    <select
+                        value={ordenacao}
+                        onChange={(e) => setOrdenacao(e.target.value as Ordenacao)}
+                        className={`${inputClass} w-56`}
                     >
-                        <PlusIcon className="h-4 w-4" />
-                        Novo lançamento
-                    </button>
-                </form>
-            }
-        >
+                        {Object.entries(ORDENACAO_LABEL).map(([valor, label]) => (
+                            <option key={valor} value={valor}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <button type="submit" className={botaoPrimario}>
+                    Buscar
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setEditando(null)
+                        setMostrarForm(true)
+                    }}
+                    className={`${botaoPrimario} flex items-center gap-1.5`}
+                >
+                    <PlusIcon className="h-4 w-4" />
+                    Novo lançamento
+                </button>
+            </form>
+
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-gray-base/30 bg-white p-4 shadow-sm dark:border-dark-border dark:bg-dark-surface">
                     <span className={labelClass}>Total em aberto</span>
@@ -252,14 +277,11 @@ export default function Inadimplencias() {
                     }}
                 />
             )}
-        </PageShell>
+        </>
     )
 }
 
-function useInadimplencias(
-    filtros: { busca: string; status: string; fornecedorId: string },
-    habilitado: boolean
-) {
+function useInadimplencias(filtros: { busca: string; status: string; fornecedorId: string }, habilitado: boolean) {
     const [data, setData] = useState<Inadimplencia[] | null>(null)
     const [loading, setLoading] = useState(habilitado)
     const [erro, setErro] = useState<string | null>(null)

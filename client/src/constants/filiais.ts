@@ -10,7 +10,7 @@ export function nomeFilial(id: number) {
     return FILIAIS[id] ?? `Filial ${id}`
 }
 
-const FILIAL_ECOMMERCE = 99
+export const FILIAL_ECOMMERCE = 99
 const FILIAL_ORIGEM_ECOMMERCE = 1
 
 /**

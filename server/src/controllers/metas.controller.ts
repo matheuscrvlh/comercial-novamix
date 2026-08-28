@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkPermission } from '../middlewares/auth.middlewares'
-import { listMetas, upsertMeta, deleteMeta } from '../services/metas.service'
+import { listMetas, upsertMeta, deleteMeta, IDEMPRESA_GERAL } from '../services/metas.service'
 
 const ADMIN_ACCESS = 'admin'
 
@@ -31,7 +31,7 @@ export async function getMetas(req: FastifyRequest, res: FastifyReply) {
         return
     }
 
-    const idEmpresa = idempresa ? parseInt(idempresa, 10) : 100
+    const idEmpresa = idempresa ? parseInt(idempresa, 10) : IDEMPRESA_GERAL
 
     res.send(await listMetas(mesano, idEmpresa))
 }
@@ -44,6 +44,7 @@ interface SalvarMetaBody {
     meta_margem_pct: number
     meta_compra: number
     meta_reducao_estoque_pct: number
+    meta_avaria: number
 }
 
 export async function salvarMeta(req: FastifyRequest, res: FastifyReply) {
@@ -64,6 +65,7 @@ export async function salvarMeta(req: FastifyRequest, res: FastifyReply) {
         meta_margem_pct: Number(body.meta_margem_pct) || 0,
         meta_compra: Number(body.meta_compra) || 0,
         meta_reducao_estoque_pct: Number(body.meta_reducao_estoque_pct) || 0,
+        meta_avaria: Number(body.meta_avaria) || 0,
     })
 
     res.send({ ok: true })

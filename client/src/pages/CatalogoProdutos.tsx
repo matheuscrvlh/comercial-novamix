@@ -3,6 +3,7 @@ import PageShell from '../components/PageShell'
 import Spinner from '../components/Spinner'
 import ResumoSecaoTree from '../components/ResumoSecaoTree'
 import ProdutoDetalheModal from '../components/ProdutoDetalheModal'
+import ProdutoCodigos from '../components/ProdutoCodigos'
 import { InfoIcon } from '../components/icons'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
@@ -148,7 +149,7 @@ export default function CatalogoProdutos() {
             meError={meError}
             autorizado={me?.isAdmin ?? false}
             titulo="Catálogo de Produtos"
-            subtitulo="Hierarquia mercadológica (divisão, seção, grupo, subgrupo) e status de cada produto."
+            subtitulo="Hierarquia mercadológica (divisão, seção, grupo, subgrupo) e status de cada produto. Busque por nome, código interno ou código de barras."
             filtros={
                 <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
                     <div className="flex flex-col gap-2">
@@ -159,7 +160,7 @@ export default function CatalogoProdutos() {
                             type="text"
                             value={campo}
                             onChange={(e) => setCampo(e.target.value)}
-                            placeholder="Nome ou código do produto"
+                            placeholder="Nome, código interno ou de barras"
                             className="w-72 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         />
                     </div>
@@ -298,8 +299,8 @@ export default function CatalogoProdutos() {
                                     className="border-b border-gray-base/10 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
                                 >
                                     <td className="px-4 py-2.5 font-medium">
-                                        <span className="text-gray-dark dark:text-dark-text-muted">{row.IDSUBPRODUTO}</span> -{' '}
                                         {row.DESCRICAOPRODUTO}
+                                        <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
                                     </td>
                                     <td className="px-4 py-2.5 text-gray-dark dark:text-dark-text-muted">
                                         {row.FABRICANTE ?? '—'}

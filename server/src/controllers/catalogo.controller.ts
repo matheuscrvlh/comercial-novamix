@@ -40,8 +40,10 @@ export async function getCatalogo(req: FastifyRequest, res: FastifyReply) {
     const params: unknown[] = []
 
     if (buscaLimpa.length >= 3) {
-        condicoes.push('(UPPER(PV.DESCRICAOPRODUTO) LIKE UPPER(?) OR CAST(PV.IDSUBPRODUTO AS VARCHAR(20)) LIKE ?)')
-        params.push(`%${buscaLimpa}%`, `${buscaLimpa}%`)
+        condicoes.push(
+            '(UPPER(PV.DESCRICAOPRODUTO) LIKE UPPER(?) OR CAST(PV.IDSUBPRODUTO AS VARCHAR(20)) LIKE ? OR CAST(PV.IDCODBARPROD AS VARCHAR(20)) LIKE ?)'
+        )
+        params.push(`%${buscaLimpa}%`, `${buscaLimpa}%`, `${buscaLimpa}%`)
     }
 
     if (iddivisaoNum) {
@@ -105,8 +107,18 @@ interface ProdutoDetalheParams {
     idsubproduto: string
 }
 
+/** Data local (nao UTC) - ver comentario de hojeISO() em comercial.controller.ts. */
 function dataISO(data: Date) {
-    return data.toISOString().slice(0, 10)
+    const ano = data.getFullYear()
+    const mes = String(data.getMonth() + 1).padStart(2, '0')
+    const dia = String(data.getDate()).padStart(2, '0')
+    return `${ano}-${mes}-${dia}`
+}
+
+function deslocarAno(dataISOStr: string, anos: number) {
+    const [ano, mes, dia] = dataISOStr.split('-').map(Number)
+    const d = new Date(Date.UTC(ano - anos, mes - 1, dia))
+    return d.toISOString().slice(0, 10)
 }
 
 export async function getProdutoDetalhe(req: FastifyRequest, res: FastifyReply) {
@@ -129,19 +141,28 @@ export async function getProdutoDetalhe(req: FastifyRequest, res: FastifyReply) 
     const hoje = new Date()
     const noventaDiasAtras = new Date(hoje)
     noventaDiasAtras.setDate(noventaDiasAtras.getDate() - 90)
+    const fimISO = dataISO(hoje)
+    const inicioISO = dataISO(noventaDiasAtras)
+    const fimAnoAnteriorISO = deslocarAno(fimISO, 1)
+    const inicioAnoAnteriorISO = deslocarAno(inicioISO, 1)
 
     const sqlCadastro = loadQueryComercial('produto_cadastro.sql')
     const sqlTributacao = loadQueryComercial('produto_tributacao.sql')
     const sqlEstoquePreco = loadQueryComercial('produto_estoque_preco.sql')
     const sqlVendaMargem = loadQueryComercial('produto_venda_margem.sql')
+    const sqlUltimoCusto = loadQueryComercial('produto_ultimo_custo.sql')
+    const sqlValidadeProxima = loadQueryComercial('produto_validade_proxima.sql')
 
     const conn = await connCiss()
     try {
-        const [cadastro, tributacao, estoquePreco, vendaMargem] = await Promise.all([
+        const [cadastro, tributacao, estoquePreco, vendaMargem, vendaMargemAnoAnterior, ultimoCusto, validadeProxima] = await Promise.all([
             conn.query(sqlCadastro, [id]),
             conn.query(sqlTributacao, [id]),
             conn.query(sqlEstoquePreco, [id, id]),
-            conn.query(sqlVendaMargem, [id, dataISO(noventaDiasAtras), dataISO(hoje)]),
+            conn.query(sqlVendaMargem, [id, inicioISO, fimISO]),
+            conn.query(sqlVendaMargem, [id, inicioAnoAnteriorISO, fimAnoAnteriorISO]),
+            conn.query(sqlUltimoCusto, [id, id]),
+            conn.query(sqlValidadeProxima, [id]),
         ])
 
         if (cadastro.length === 0) {
@@ -154,6 +175,9 @@ export async function getProdutoDetalhe(req: FastifyRequest, res: FastifyReply) 
             tributacao,
             estoquePreco,
             vendaMargem,
+            vendaMargemAnoAnterior,
+            ultimoCusto,
+            validadeProxima,
         })
     } finally {
         await conn.close()

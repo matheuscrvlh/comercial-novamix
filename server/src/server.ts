@@ -11,6 +11,8 @@ import { dashboardRoutes } from './routes/dashboard.routes.ts';
 import { catalogoRoutes } from './routes/catalogo.routes.ts';
 import { fornecedoresRoutes } from './routes/fornecedores.routes.ts';
 import { inadimplenciasRoutes } from './routes/inadimplencias.routes.ts';
+import { validadeRoutes } from './routes/validade.routes.ts';
+import { cotacoesRoutes } from './routes/cotacoes.routes.ts';
 import './database/supabase.database.ts';
 
 const app = fastify();
@@ -39,6 +41,8 @@ app.register(dashboardRoutes);
 app.register(catalogoRoutes);
 app.register(fornecedoresRoutes);
 app.register(inadimplenciasRoutes);
+app.register(validadeRoutes);
+app.register(cotacoesRoutes);
 
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})

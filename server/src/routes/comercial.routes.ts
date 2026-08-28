@@ -9,6 +9,8 @@ import {
     getFabricantes,
     getComparativoFabricante,
     getTicketOperador,
+    getGestaoEstoqueListas,
+    getVendaDiaria,
 } from '../controllers/comercial.controller'
 
 export function comercialRoutes(fastify) {
@@ -21,4 +23,6 @@ export function comercialRoutes(fastify) {
     fastify.get('/comercial/tributacao', { preHandler: [authenticate] }, getTributacao)
     fastify.get('/comercial/comparativo-fabricante', { preHandler: [authenticate] }, getComparativoFabricante)
     fastify.get('/comercial/ticket-operador', { preHandler: [authenticate] }, getTicketOperador)
+    fastify.get('/comercial/estoque-listas', { preHandler: [authenticate] }, getGestaoEstoqueListas)
+    fastify.get('/comercial/venda-diaria', { preHandler: [authenticate] }, getVendaDiaria)
 }

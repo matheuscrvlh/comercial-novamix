@@ -43,7 +43,7 @@ export default function FiltersMenu({ children }: FiltersMenuProps) {
             />
 
             <aside
-                className={`fixed top-0 right-0 z-50 flex h-dvh w-96 max-w-[90vw] flex-col gap-6 overflow-y-auto border-l border-gray-base/30 bg-white p-6 shadow-lg transition-transform duration-300 ease-in-out dark:border-dark-border dark:bg-dark-surface ${
+                className={`fixed top-0 right-0 z-50 flex h-dvh w-96 max-w-[90vw] flex-col gap-6 overflow-x-hidden overflow-y-auto border-l border-gray-base/30 bg-white p-6 shadow-lg transition-transform duration-300 ease-in-out dark:border-dark-border dark:bg-dark-surface ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >

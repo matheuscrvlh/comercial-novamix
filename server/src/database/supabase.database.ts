@@ -20,11 +20,13 @@ await supabasePool.query(`
         meta_margem_pct NUMERIC NOT NULL DEFAULT 0,
         meta_compra NUMERIC NOT NULL DEFAULT 0,
         meta_reducao_estoque_pct NUMERIC NOT NULL DEFAULT 0,
+        meta_avaria NUMERIC NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         UNIQUE (idempresa, idsecao, mesano)
     )
 `)
+await supabasePool.query(`ALTER TABLE comercial.metas_secao ADD COLUMN IF NOT EXISTS meta_avaria NUMERIC NOT NULL DEFAULT 0`)
 
 await supabasePool.query(`
     CREATE TABLE IF NOT EXISTS comercial.fornecedores (
@@ -71,3 +73,7 @@ await supabasePool.query(`
 await supabasePool.query(`CREATE INDEX IF NOT EXISTS idx_inadimplencias_fornecedor ON comercial.inadimplencias (fornecedor_id)`)
 await supabasePool.query(`CREATE INDEX IF NOT EXISTS idx_inadimplencias_status ON comercial.inadimplencias (status)`)
 await supabasePool.query(`CREATE INDEX IF NOT EXISTS idx_inadimplencias_vencimento ON comercial.inadimplencias (data_vencimento)`)
+
+// Controle de validade e cotação com concorrente vêm direto do CISS (DBA.NOTAS_VALIDADE e
+// DBA.COTACAO_CONCORRENCIA_PROD) - ver server/src/services/validade.service.ts e
+// cotacoes.service.ts. Não precisam de tabela própria aqui.
