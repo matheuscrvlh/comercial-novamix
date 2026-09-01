@@ -111,6 +111,56 @@ function ResumoRow({
     )
 }
 
+function ResumoRowMobile({
+    node,
+    depth,
+    expandedIds,
+    onToggle,
+}: {
+    node: TreeNode
+    depth: number
+    expandedIds: Set<string>
+    onToggle: (id: string) => void
+}) {
+    const temFilhos = node.children.length > 0
+    const aberto = expandedIds.has(node.id)
+
+    return (
+        <>
+            <div
+                className="flex items-center justify-between gap-2 border-b border-gray-base/10 py-2 pr-3 text-gray-text last:border-0 dark:border-dark-border/60 dark:text-dark-text"
+                style={{ paddingLeft: `${12 + depth * 16}px` }}
+            >
+                <span className="flex min-w-0 items-center gap-2">
+                    {temFilhos ? (
+                        <button
+                            type="button"
+                            onClick={() => onToggle(node.id)}
+                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-dark transition hover:bg-gray-base/10 dark:text-dark-text-muted"
+                            aria-label={aberto ? 'Recolher' : 'Expandir'}
+                        >
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                        </button>
+                    ) : (
+                        <span className="h-5 w-5 shrink-0" />
+                    )}
+                    <span className="truncate text-sm font-medium">{node.label}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-3 text-xs">
+                    <span className="text-green-base">{formatNumber(node.ativos)}</span>
+                    <span className="text-red-base">{formatNumber(node.inativos)}</span>
+                    <span className="font-medium text-gray-text dark:text-dark-text">{formatNumber(node.total)}</span>
+                </span>
+            </div>
+            {temFilhos &&
+                aberto &&
+                node.children.map((child) => (
+                    <ResumoRowMobile key={child.id} node={child} depth={depth + 1} expandedIds={expandedIds} onToggle={onToggle} />
+                ))}
+        </>
+    )
+}
+
 export default function ResumoSecaoTree({ rows, loading }: { rows: ResumoMercadologicoRow[]; loading: boolean }) {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
@@ -126,37 +176,64 @@ export default function ResumoSecaoTree({ rows, loading }: { rows: ResumoMercado
     const tree = buildTree(rows)
 
     return (
-        <div className="mb-8 max-h-96 overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
-            <table className="w-full min-w-[500px] text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-dark-surface">
-                    <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
-                        <th className="px-4 py-3">Divisão / Seção / Grupo / Subgrupo</th>
-                        <th className="px-4 py-3 text-right">Ativos</th>
-                        <th className="px-4 py-3 text-right">Inativos</th>
-                        <th className="px-4 py-3 text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {loading && (
-                        <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center">
-                                <Spinner className="mx-auto h-5 w-5" />
-                            </td>
+        <>
+            <div className="mb-8 max-h-96 overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:hidden dark:border-dark-border dark:bg-dark-surface">
+                {loading && (
+                    <div className="flex justify-center py-8">
+                        <Spinner className="h-5 w-5" />
+                    </div>
+                )}
+                {!loading && (
+                    <div className="sticky top-0 flex items-center justify-between gap-2 border-b border-gray-base/30 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:bg-dark-surface dark:text-dark-text-muted">
+                        <span>Divisão / Seção / Grupo / Subgrupo</span>
+                        <span className="flex shrink-0 gap-3">
+                            <span>Ativos</span>
+                            <span>Inativos</span>
+                            <span>Total</span>
+                        </span>
+                    </div>
+                )}
+                {!loading &&
+                    tree.map((node) => (
+                        <ResumoRowMobile key={node.id} node={node} depth={0} expandedIds={expandedIds} onToggle={toggle} />
+                    ))}
+                {!loading && tree.length === 0 && (
+                    <p className="px-4 py-8 text-center text-sm text-gray-dark dark:text-dark-text-muted">Nenhum dado disponível.</p>
+                )}
+            </div>
+
+            <div className="mb-8 hidden max-h-96 overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
+                <table className="w-full min-w-[500px] text-sm">
+                    <thead className="sticky top-0 bg-white dark:bg-dark-surface">
+                        <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
+                            <th className="px-4 py-3">Divisão / Seção / Grupo / Subgrupo</th>
+                            <th className="px-4 py-3 text-right">Ativos</th>
+                            <th className="px-4 py-3 text-right">Inativos</th>
+                            <th className="px-4 py-3 text-right">Total</th>
                         </tr>
-                    )}
-                    {!loading &&
-                        tree.map((node) => (
-                            <ResumoRow key={node.id} node={node} depth={0} expandedIds={expandedIds} onToggle={toggle} />
-                        ))}
-                    {!loading && tree.length === 0 && (
-                        <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
-                                Nenhum dado disponível.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {loading && (
+                            <tr>
+                                <td colSpan={4} className="px-4 py-8 text-center">
+                                    <Spinner className="mx-auto h-5 w-5" />
+                                </td>
+                            </tr>
+                        )}
+                        {!loading &&
+                            tree.map((node) => (
+                                <ResumoRow key={node.id} node={node} depth={0} expandedIds={expandedIds} onToggle={toggle} />
+                            ))}
+                        {!loading && tree.length === 0 && (
+                            <tr>
+                                <td colSpan={4} className="px-4 py-8 text-center text-gray-dark dark:text-dark-text-muted">
+                                    Nenhum dado disponível.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </>
     )
 }

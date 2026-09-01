@@ -6,6 +6,7 @@ import Spinner from '../Spinner'
 import Modal from '../Modal'
 import StatCard from '../charts/StatCard'
 import RankingBars from '../charts/RankingBars'
+import { MobileCard, CardField } from '../MobileCard'
 import { Check, Filter, Tag } from 'lucide-react'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
@@ -213,7 +214,39 @@ export default function PromocoesConteudo() {
                 <StatusFilterButton selecionados={statusFiltro} onChange={setStatusFiltro} />
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && promocoesFiltradas.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                    {promocoes.length === 0 ? 'Nenhuma promoção no período selecionado.' : 'Nenhuma promoção com o status selecionado.'}
+                </p>
+            )}
+
+            {!loading && promocoesFiltradas.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {promocoesFiltradas.map((p) => (
+                        <MobileCard key={p.IDPROMOCAO} onClick={() => setIdPromocaoSelecionada(p.IDPROMOCAO)}>
+                            <div className="flex items-start justify-between gap-3">
+                                <p className="font-medium text-gray-text dark:text-dark-text">{p.DESCRPROMOCAO}</p>
+                                <StatusBadge status={p.STATUS} />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-dark dark:text-dark-text-muted">
+                                {formatDataHora(p.DTINIPROMOCAO)} a {formatDataHora(p.DTFIMPROMOCAO)}
+                            </p>
+                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                <CardField label="Lojas" value={formatNumber(p.QTD_LOJAS)} />
+                                <CardField label="Produtos" value={formatNumber(p.QTD_PRODUTOS)} />
+                            </div>
+                        </MobileCard>
+                    ))}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[700px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
@@ -324,7 +357,33 @@ export default function PromocoesConteudo() {
                                 />
                             </div>
 
-                            <div className="overflow-x-auto rounded-xl border border-gray-base/30 dark:border-dark-border">
+                            {detalhe.produtos.length === 0 && (
+                                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                                    Nenhum produto nessa promoção.
+                                </p>
+                            )}
+                            {detalhe.produtos.length > 0 && (
+                                <div className="flex flex-col gap-3 lg:hidden">
+                                    {detalhe.produtos.map((p) => (
+                                        <MobileCard key={p.IDSUBPRODUTO}>
+                                            <p className="font-medium text-gray-text dark:text-dark-text">{p.DESCRICAOPRODUTO}</p>
+                                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                                <CardField label="Preço promo" value={formatCurrency(p.VALPRECO)} />
+                                                <CardField label="Desconto" value={p.PERDESCONTO > 0 ? `${p.PERDESCONTO.toFixed(1)}%` : '—'} />
+                                                <CardField label="Venda" value={formatCurrency(p.VENDA)} />
+                                                <CardField label="Qtd" value={formatNumber(p.QTD_VENDIDA)} />
+                                                <CardField
+                                                    label="Qtd/dia antes"
+                                                    value={p.QTD_MEDIA_DIARIA_ANTES.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                                                    valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                                />
+                                            </div>
+                                        </MobileCard>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 lg:block dark:border-dark-border">
                                 <table className="w-full min-w-[600px] text-sm">
                                     <thead>
                                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

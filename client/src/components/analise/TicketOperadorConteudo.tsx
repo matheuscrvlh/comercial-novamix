@@ -5,6 +5,7 @@ import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import DonutStat from '../charts/DonutStat'
 import GroupedBars from '../charts/GroupedBars'
+import { MobileCard, CardField } from '../MobileCard'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatNumber, formatPercent } from '../../lib/format'
@@ -110,7 +111,51 @@ export default function TicketOperadorConteudo() {
                 />
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && linhas.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                    Nenhum ticket no período selecionado.
+                </p>
+            )}
+
+            {!loading && linhas.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {linhas.map((row, i) => {
+                        const percPositivo = row.TOTAL_TICKETS > 0 ? row.TICKETS_POSITIVOS / row.TOTAL_TICKETS : 0
+                        return (
+                            <MobileCard key={`${row.IDUSUARIO}-${row.IDEMPRESA}-${i}`}>
+                                <p className="font-medium text-gray-text dark:text-dark-text">{row.NOME_OPERADOR}</p>
+                                <p className="text-xs text-gray-dark dark:text-dark-text-muted">{nomeFilial(row.IDEMPRESA)}</p>
+                                <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                    <CardField
+                                        label="Tickets Positivos"
+                                        value={formatNumber(row.TICKETS_POSITIVOS)}
+                                        valueClassName="text-green-base"
+                                    />
+                                    <CardField
+                                        label="Tickets Negativos"
+                                        value={formatNumber(row.TICKETS_NEGATIVOS)}
+                                        valueClassName="text-red-base"
+                                    />
+                                    <CardField label="Total" value={formatNumber(row.TOTAL_TICKETS)} />
+                                    <CardField
+                                        label="% Positivo"
+                                        value={formatPercent(percPositivo)}
+                                        valueClassName={percPositivo >= 0.5 ? 'text-green-base' : 'text-red-base'}
+                                    />
+                                </div>
+                            </MobileCard>
+                        )
+                    })}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[800px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

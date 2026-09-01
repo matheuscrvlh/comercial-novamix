@@ -4,6 +4,7 @@ import FilialMultiFilter from '../FilialMultiFilter'
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
+import { MobileCard, CardField } from '../MobileCard'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatPercent } from '../../lib/format'
@@ -82,8 +83,54 @@ export default function ComparativoFabricanteConteudo() {
                 </p>
             )}
 
+            {fabricante && loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {fabricante && !loading && linhas.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                    Nenhum produto encontrado para esse fabricante no período.
+                </p>
+            )}
+
+            {fabricante && !loading && linhas.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {linhas.map((row) => {
+                        const var1 = variacao(row.VENDA_ATUAL, row.VENDA_ANO_ANTERIOR)
+                        return (
+                            <MobileCard key={row.IDSUBPRODUTO}>
+                                <p className="font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                                <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                    <CardField label="Venda Atual" value={formatCurrency(row.VENDA_ATUAL)} />
+                                    <CardField
+                                        label="Venda Ano Anterior"
+                                        value={formatCurrency(row.VENDA_ANO_ANTERIOR)}
+                                        valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                    />
+                                    <CardField
+                                        label="Var."
+                                        value={var1 === null ? '—' : formatPercent(var1)}
+                                        valueClassName={var1 === null ? '' : var1 >= 0 ? 'text-green-base' : 'text-red-base'}
+                                    />
+                                    <CardField
+                                        label="Venda 2 Anos Antes"
+                                        value={formatCurrency(row.VENDA_2_ANOS_ANTES)}
+                                        valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                    />
+                                    <CardField label="Lucro Atual" value={formatCurrency(row.LUCRO_ATUAL)} />
+                                    <CardField label="Estoque Atual" value={formatCurrency(row.VALOR_ESTOQUE)} />
+                                </div>
+                            </MobileCard>
+                        )
+                    })}
+                </div>
+            )}
+
             {fabricante && (
-                <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+                <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                     <table className="w-full min-w-[1000px] text-sm">
                         <thead>
                             <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

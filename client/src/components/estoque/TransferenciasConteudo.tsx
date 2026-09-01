@@ -5,6 +5,7 @@ import MercadologicoFilter, { type MercadologicoSelecao } from '../Mercadologico
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
+import { MobileCard, CardField } from '../MobileCard'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatDate } from '../../lib/format'
@@ -68,7 +69,42 @@ export default function TransferenciasConteudo() {
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
             <h2 className="mb-3 text-lg font-semibold text-gray-text dark:text-dark-text">Transferências entre lojas</h2>
-            <div className="mb-8 overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+
+            {loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && transferencias.length === 0 && (
+                <p className="mb-8 py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                    Nenhuma transferência no período.
+                </p>
+            )}
+
+            {!loading && transferencias.length > 0 && (
+                <div className="mb-8 flex flex-col gap-3 lg:hidden">
+                    {transferencias.map((row) => {
+                        const saldo = row.VALOR_RECEBIDO - row.VALOR_ENVIADO
+                        return (
+                            <MobileCard key={row.IDEMPRESA}>
+                                <p className="font-medium text-gray-text dark:text-dark-text">{row.NOME_EMPRESA}</p>
+                                <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                    <CardField label="Enviado" value={formatCurrency(row.VALOR_ENVIADO)} />
+                                    <CardField label="Recebido" value={formatCurrency(row.VALOR_RECEBIDO)} />
+                                    <CardField
+                                        label="Saldo"
+                                        value={formatCurrency(saldo)}
+                                        valueClassName={saldo >= 0 ? 'text-green-base' : 'text-red-base'}
+                                    />
+                                </div>
+                            </MobileCard>
+                        )
+                    })}
+                </div>
+            )}
+
+            <div className="mb-8 hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[600px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
@@ -119,7 +155,35 @@ export default function TransferenciasConteudo() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div>
                     <h2 className="mb-3 text-lg font-semibold text-gray-text dark:text-dark-text">Estoque negativo</h2>
-                    <div className="max-h-[500px] overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+
+                    {loading && (
+                        <div className="flex justify-center py-10 lg:hidden">
+                            <Spinner className="h-5 w-5" />
+                        </div>
+                    )}
+
+                    {!loading && negativo.length === 0 && (
+                        <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                            Nenhum produto com estoque negativo.
+                        </p>
+                    )}
+
+                    {!loading && negativo.length > 0 && (
+                        <div className="flex max-h-[500px] flex-col gap-3 overflow-y-auto lg:hidden">
+                            {negativo.map((row, i) => (
+                                <MobileCard key={i}>
+                                    <p className="text-xs text-gray-dark dark:text-dark-text-muted">{row.NOME_EMPRESA}</p>
+                                    <p className="font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                                    <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                    <div className="mt-2">
+                                        <CardField label="Qtd" value={row.QTDATUALESTOQUE} valueClassName="text-red-base" />
+                                    </div>
+                                </MobileCard>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="hidden max-h-[500px] overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                         <table className="w-full min-w-[500px] text-sm">
                             <thead className="sticky top-0 bg-white dark:bg-dark-surface">
                                 <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">
@@ -170,7 +234,40 @@ export default function TransferenciasConteudo() {
                     <h2 className="mb-3 text-lg font-semibold text-gray-text dark:text-dark-text">
                         Produtos parados (60+ dias sem venda)
                     </h2>
-                    <div className="max-h-[500px] overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+
+                    {loading && (
+                        <div className="flex justify-center py-10 lg:hidden">
+                            <Spinner className="h-5 w-5" />
+                        </div>
+                    )}
+
+                    {!loading && parado.length === 0 && (
+                        <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                            Nenhum produto parado encontrado.
+                        </p>
+                    )}
+
+                    {!loading && parado.length > 0 && (
+                        <div className="flex max-h-[500px] flex-col gap-3 overflow-y-auto lg:hidden">
+                            {parado.map((row, i) => (
+                                <MobileCard key={i}>
+                                    <p className="text-xs text-gray-dark dark:text-dark-text-muted">{row.NOME_EMPRESA}</p>
+                                    <p className="font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                                    <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                                    <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                        <CardField label="Valor" value={formatCurrency(row.VALATUALESTOQUE)} />
+                                        <CardField
+                                            label="Última venda"
+                                            value={row.DTULTIMAVENDA ? formatDate(row.DTULTIMAVENDA) : 'Nunca'}
+                                            valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                        />
+                                    </div>
+                                </MobileCard>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="hidden max-h-[500px] overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                         <table className="w-full min-w-[500px] text-sm">
                             <thead className="sticky top-0 bg-white dark:bg-dark-surface">
                                 <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

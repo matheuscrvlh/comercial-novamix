@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import PageShell from '../components/PageShell'
 import Spinner from '../components/Spinner'
+import { MobileCard } from '../components/MobileCard'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { apiPost } from '../lib/api'
@@ -99,6 +100,8 @@ export default function Metas() {
 
     const inputClass =
         'w-24 rounded-lg border border-gray-base/30 bg-white px-2 py-1.5 text-right text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+    const cardInputClass =
+        'w-full rounded-lg border border-gray-base/30 bg-white px-2 py-1.5 text-right text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
 
     const carregando = loadingSecoes || loadingMetas
 
@@ -145,7 +148,83 @@ export default function Metas() {
         >
             {metasErro && <p className="text-sm text-red-base mb-4">{metasErro}</p>}
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {carregando && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!carregando && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {(secoes ?? []).map((secao) => {
+                        const valores = form[secao.IDSECAO]
+                        if (!valores) return null
+
+                        return (
+                            <MobileCard key={secao.IDSECAO}>
+                                <p className="font-medium text-gray-text dark:text-dark-text">{secao.DESCRSECAO}</p>
+                                <div className="mt-2 grid grid-cols-2 gap-3">
+                                    <label className="flex flex-col gap-1">
+                                        <span className="text-xs text-gray-dark dark:text-dark-text-muted">Meta Venda (R$)</span>
+                                        <input
+                                            type="number"
+                                            className={cardInputClass}
+                                            value={valores.meta_venda}
+                                            onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_venda', e.target.value)}
+                                        />
+                                    </label>
+                                    <label className="flex flex-col gap-1">
+                                        <span className="text-xs text-gray-dark dark:text-dark-text-muted">Meta Margem (%)</span>
+                                        <input
+                                            type="number"
+                                            className={cardInputClass}
+                                            value={valores.meta_margem_pct}
+                                            onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_margem_pct', e.target.value)}
+                                        />
+                                    </label>
+                                    <label className="flex flex-col gap-1">
+                                        <span className="text-xs text-gray-dark dark:text-dark-text-muted">Meta Compra (R$)</span>
+                                        <input
+                                            type="number"
+                                            className={cardInputClass}
+                                            value={valores.meta_compra}
+                                            onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_compra', e.target.value)}
+                                        />
+                                    </label>
+                                    <label className="flex flex-col gap-1">
+                                        <span className="text-xs text-gray-dark dark:text-dark-text-muted">Meta Avaria (R$)</span>
+                                        <input
+                                            type="number"
+                                            className={cardInputClass}
+                                            value={valores.meta_avaria}
+                                            onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_avaria', e.target.value)}
+                                        />
+                                    </label>
+                                    <label className="col-span-2 flex flex-col gap-1">
+                                        <span className="text-xs text-gray-dark dark:text-dark-text-muted">Meta Redução Estoque (%)</span>
+                                        <input
+                                            type="number"
+                                            className={cardInputClass}
+                                            value={valores.meta_reducao_estoque_pct}
+                                            onChange={(e) => atualizarCampo(secao.IDSECAO, 'meta_reducao_estoque_pct', e.target.value)}
+                                        />
+                                    </label>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => salvar(secao.IDSECAO)}
+                                    disabled={salvandoId === secao.IDSECAO}
+                                    className="mt-3 w-full rounded-lg bg-orange-base px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-light disabled:opacity-50"
+                                >
+                                    {salvandoId === secao.IDSECAO ? 'Salvando...' : 'Salvar'}
+                                </button>
+                            </MobileCard>
+                        )
+                    })}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[1050px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

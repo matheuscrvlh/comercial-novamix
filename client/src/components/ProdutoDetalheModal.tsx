@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Modal from './Modal'
 import Spinner from './Spinner'
+import { MobileCard, CardField } from './MobileCard'
 import { useApi } from '../hooks/useApi'
 import { nomeFilial } from '../constants/filiais'
 import type { ProdutoDetalhe } from '../types/comercial'
@@ -116,6 +117,132 @@ export default function ProdutoDetalheModal({ idsubproduto, onClose }: ProdutoDe
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Estoque, preço e validade por filial
                         </h3>
+                        {data.estoquePreco.length === 0 && (
+                            <p className="py-4 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                                Sem dados de estoque/preço.
+                            </p>
+                        )}
+                        {data.estoquePreco.length > 0 && (
+                            <div className="flex flex-col gap-3 lg:hidden">
+                                {data.estoquePreco.map((row) => {
+                                    const vendaMargem = data.vendaMargem.find((v) => v.IDEMPRESA === row.IDEMPRESA)
+                                    const vendaAnoAnterior = data.vendaMargemAnoAnterior.find((v) => v.IDEMPRESA === row.IDEMPRESA)
+                                    const custo = data.ultimoCusto.find((c) => c.IDEMPRESA === row.IDEMPRESA)
+                                    const validade = data.validadeProxima.find((v) => v.IDEMPRESA === row.IDEMPRESA)
+
+                                    const qtdVendida90d = vendaMargem?.QTD_VENDIDA ?? 0
+                                    const diasEstoque =
+                                        row.QTDATUALESTOQUE != null && qtdVendida90d > 0
+                                            ? row.QTDATUALESTOQUE / (qtdVendida90d / 90)
+                                            : null
+
+                                    const precoMedioAtual =
+                                        vendaMargem && vendaMargem.QTD_VENDIDA > 0 ? vendaMargem.VENDA / vendaMargem.QTD_VENDIDA : null
+                                    const precoMedioAnterior =
+                                        vendaAnoAnterior && vendaAnoAnterior.QTD_VENDIDA > 0
+                                            ? vendaAnoAnterior.VENDA / vendaAnoAnterior.QTD_VENDIDA
+                                            : null
+                                    const variacaoPreco =
+                                        precoMedioAtual !== null && precoMedioAnterior !== null && precoMedioAnterior !== 0
+                                            ? (precoMedioAtual - precoMedioAnterior) / precoMedioAnterior
+                                            : null
+
+                                    const diasValidade = validade ? diasAte(validade.DTVALIDADE) : null
+
+                                    return (
+                                        <MobileCard key={row.IDEMPRESA}>
+                                            <p className="font-medium text-gray-text dark:text-dark-text">{nomeFilial(row.IDEMPRESA)}</p>
+                                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                                <CardField
+                                                    label="Estoque"
+                                                    value={
+                                                        <>
+                                                            {row.QTDATUALESTOQUE ?? '—'}
+                                                            <span className="block text-xs font-normal text-gray-dark dark:text-dark-text-muted">
+                                                                {formatarMoeda(row.VALATUALESTOQUE)}
+                                                            </span>
+                                                        </>
+                                                    }
+                                                />
+                                                <CardField label="Preço de venda" value={formatarMoeda(row.VALPRECOVENDA)} />
+                                                <CardField
+                                                    label="Último custo"
+                                                    value={
+                                                        <>
+                                                            {custo ? formatarMoeda(custo.VALCUSTOULTIMO) : '—'}
+                                                            {custo && (
+                                                                <span className="block text-xs font-normal text-gray-dark dark:text-dark-text-muted">
+                                                                    {formatarData(custo.DTULTIMACOMPRA)}
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    }
+                                                />
+                                                <CardField
+                                                    label="Preço médio (vs. ano passado)"
+                                                    value={
+                                                        <>
+                                                            {precoMedioAtual === null ? '—' : formatarMoeda(precoMedioAtual)}
+                                                            {precoMedioAnterior !== null && (
+                                                                <span
+                                                                    className={`block text-xs font-medium ${
+                                                                        variacaoPreco === null
+                                                                            ? 'text-gray-dark dark:text-dark-text-muted'
+                                                                            : variacaoPreco >= 0
+                                                                              ? 'text-green-base'
+                                                                              : 'text-red-base'
+                                                                    }`}
+                                                                >
+                                                                    {formatarMoeda(precoMedioAnterior)}
+                                                                    {variacaoPreco !== null && ` (${formatarPercentual(variacaoPreco * 100)})`}
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    }
+                                                />
+                                                <CardField
+                                                    label="Última venda / cobertura"
+                                                    value={
+                                                        <>
+                                                            {formatarData(row.DTULTIMAVENDA)}
+                                                            <span className="block text-xs font-normal text-gray-dark dark:text-dark-text-muted">
+                                                                {diasEstoque === null ? '—' : `${diasEstoque.toFixed(0)}d de cobertura`}
+                                                            </span>
+                                                        </>
+                                                    }
+                                                />
+                                                <CardField
+                                                    label="Validade mais próxima"
+                                                    value={
+                                                        validade ? (
+                                                            <>
+                                                                <span
+                                                                    className={
+                                                                        diasValidade !== null && diasValidade <= 15
+                                                                            ? 'text-red-base'
+                                                                            : diasValidade !== null && diasValidade <= 30
+                                                                              ? 'text-orange-base'
+                                                                              : ''
+                                                                    }
+                                                                >
+                                                                    {formatarData(validade.DTVALIDADE)}
+                                                                </span>
+                                                                <span className="block text-xs font-normal text-gray-dark dark:text-dark-text-muted">
+                                                                    {validade.QTDPRODUTO} un
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            '—'
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                        </MobileCard>
+                                    )
+                                })}
+                            </div>
+                        )}
+
                         <TabelaFilial>
                             <thead>
                                 <tr className="border-b border-gray-base/30 dark:border-dark-border">
@@ -235,6 +362,26 @@ export default function ProdutoDetalheModal({ idsubproduto, onClose }: ProdutoDe
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Tributação por filial
                         </h3>
+                        {data.tributacao.length === 0 && (
+                            <p className="py-4 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                                Sem dados de tributação.
+                            </p>
+                        )}
+                        {data.tributacao.length > 0 && (
+                            <div className="flex flex-col gap-3 lg:hidden">
+                                {data.tributacao.map((row) => (
+                                    <MobileCard key={row.IDEMPRESA}>
+                                        <p className="font-medium text-gray-text dark:text-dark-text">{nomeFilial(row.IDEMPRESA)}</p>
+                                        <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                            <CardField label="UF origem" value={row.UFORIGEM} />
+                                            <CardField label="% ICMS" value={formatarPercentual(row.PERICMSAI)} />
+                                            <CardField label="% ICMS Subst." value={formatarPercentual(row.PERICMSUBST)} />
+                                            <CardField label="Situação tributária" value={row.DESCRSITTRIBUTARIA ?? '—'} />
+                                        </div>
+                                    </MobileCard>
+                                ))}
+                            </div>
+                        )}
                         <TabelaFilial>
                             <thead>
                                 <tr className="border-b border-gray-base/30 dark:border-dark-border">
@@ -270,6 +417,28 @@ export default function ProdutoDetalheModal({ idsubproduto, onClose }: ProdutoDe
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Venda e margem (últimos 90 dias)
                         </h3>
+                        {data.vendaMargem.length === 0 && (
+                            <p className="py-4 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                                Sem vendas no período.
+                            </p>
+                        )}
+                        {data.vendaMargem.length > 0 && (
+                            <div className="flex flex-col gap-3 lg:hidden">
+                                {data.vendaMargem.map((row) => (
+                                    <MobileCard key={row.IDEMPRESA}>
+                                        <p className="font-medium text-gray-text dark:text-dark-text">{nomeFilial(row.IDEMPRESA)}</p>
+                                        <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                            <CardField label="Venda" value={formatarMoeda(row.VENDA)} />
+                                            <CardField label="Lucro" value={formatarMoeda(row.LUCRO)} />
+                                            <CardField
+                                                label="Margem"
+                                                value={row.VENDA > 0 ? formatarPercentual((row.LUCRO / row.VENDA) * 100) : '—'}
+                                            />
+                                        </div>
+                                    </MobileCard>
+                                ))}
+                            </div>
+                        )}
                         <TabelaFilial>
                             <thead>
                                 <tr className="border-b border-gray-base/30 dark:border-dark-border">
@@ -319,7 +488,7 @@ function Campo({ label, valor }: { label: string; valor: ReactNode }) {
 
 function TabelaFilial({ children }: { children: ReactNode }) {
     return (
-        <div className="overflow-x-auto rounded-lg border border-gray-base/30 dark:border-dark-border">
+        <div className="hidden overflow-x-auto rounded-lg border border-gray-base/30 lg:block dark:border-dark-border">
             <table className="w-full min-w-[500px] text-sm">{children}</table>
         </div>
     )

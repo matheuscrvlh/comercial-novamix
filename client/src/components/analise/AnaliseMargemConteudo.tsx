@@ -4,6 +4,7 @@ import FilialMultiFilter from '../FilialMultiFilter'
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
+import { MobileCard, CardField } from '../MobileCard'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatPercent } from '../../lib/format'
@@ -69,7 +70,53 @@ export default function AnaliseMargemConteudo() {
 
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && linhas.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                    Nenhuma exceção de margem no período selecionado.
+                </p>
+            )}
+
+            {!loading && linhas.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {linhas.map((row) => (
+                        <MobileCard key={row.IDSUBPRODUTO}>
+                            <p className="font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                            <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                <CardField label="Venda" value={formatCurrency(row.VENDA)} />
+                                <CardField
+                                    label="Lucro"
+                                    value={formatCurrency(row.LUCRO)}
+                                    valueClassName={row.LUCRO < 0 ? 'text-red-base' : ''}
+                                />
+                                <CardField label="Margem" value={formatPercent(row.MARGEM)} />
+                                <CardField
+                                    label="Meta Margem"
+                                    value={row.META_MARGEM_PCT !== null ? formatPercent(row.META_MARGEM_PCT / 100) : '—'}
+                                    valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                />
+                            </div>
+                            {row.FLAGS.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                    {row.FLAGS.map((flag) => (
+                                        <span key={flag} className={`rounded-full px-2 py-0.5 text-xs font-medium ${FLAG_CLASS[flag]}`}>
+                                            {FLAG_LABEL[flag]}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </MobileCard>
+                    ))}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[900px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

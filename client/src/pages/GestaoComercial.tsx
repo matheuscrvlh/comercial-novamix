@@ -8,6 +8,7 @@ import Spinner from '../components/Spinner'
 import RankingList from '../components/RankingList'
 import TabButtons from '../components/TabButtons'
 import PromocoesConteudo from '../components/comercial/PromocoesConteudo'
+import { MobileCard, CardField } from '../components/MobileCard'
 import { useMe } from '../hooks/useMe'
 import { useApi } from '../hooks/useApi'
 import { formatCurrency, formatPercent } from '../lib/format'
@@ -56,6 +57,27 @@ function CelulaValorMeta({ valor, meta, formatValor, percentual, menorEhMelhor =
                 </div>
             )}
         </td>
+    )
+}
+
+function CardValorMeta({ label, valor, meta, formatValor, percentual, menorEhMelhor = false }: CelulaValorMetaProps & { label: string }) {
+    const temMeta = meta > 0
+    const bateuMeta = temMeta && (menorEhMelhor ? valor <= meta : valor >= meta)
+    const corValor = !temMeta ? 'text-gray-text dark:text-dark-text' : bateuMeta ? 'text-green-base' : 'text-red-base'
+
+    return (
+        <div className="flex items-center justify-between gap-3 py-1">
+            <span className="text-xs text-gray-dark dark:text-dark-text-muted">{label}</span>
+            <span className="text-right">
+                <span className={`text-sm font-medium ${corValor}`}>{formatValor(valor)}</span>
+                {temMeta && (
+                    <span className="block text-xs text-gray-dark dark:text-dark-text-muted">
+                        Meta {formatValor(meta)}
+                        {percentual !== null && percentual !== undefined && ` · ${formatPercent(percentual)}`}
+                    </span>
+                )}
+            </span>
+        </div>
     )
 }
 
@@ -131,7 +153,86 @@ export default function GestaoComercial() {
                 <>
                     {erro && <p className="text-sm text-red-base mb-4">{erro}</p>}
 
-                    <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+                    {loading && (
+                        <div className="flex justify-center py-10 lg:hidden">
+                            <Spinner className="h-5 w-5" />
+                        </div>
+                    )}
+
+                    {!loading && linhas.length === 0 && (
+                        <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                            Nenhum dado para o período selecionado.
+                        </p>
+                    )}
+
+                    {!loading && linhas.length > 0 && (
+                        <div className="flex flex-col gap-3 lg:hidden">
+                            {linhas.map((row) => {
+                                const margemAtual = row.VENDA_ATUAL !== 0 ? row.LUCRO_ATUAL / row.VENDA_ATUAL : 0
+                                const percMeta = pct(row.VENDA_ATUAL, row.META_VENDA)
+
+                                return (
+                                    <MobileCard key={row.IDSECAO}>
+                                        <p className="font-medium text-gray-text dark:text-dark-text">{row.DESCRSECAO}</p>
+                                        <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                            <CardField label="Venda Dia" value={formatCurrency(row.VENDA_DIA)} />
+                                            <CardValorMeta
+                                                label="Venda (vs. Meta)"
+                                                valor={row.VENDA_ATUAL}
+                                                meta={row.META_VENDA}
+                                                formatValor={formatCurrency}
+                                                percentual={percMeta}
+                                            />
+                                            <CardField
+                                                label="Ano Anterior"
+                                                value={
+                                                    <>
+                                                        {formatCurrency(row.VENDA_ANO_ANTERIOR)}
+                                                        <span
+                                                            className={`block text-xs font-normal ${
+                                                                row.VARIACAO_ANO_PCT === null
+                                                                    ? 'text-gray-dark dark:text-dark-text-muted'
+                                                                    : row.VARIACAO_ANO_PCT >= 0
+                                                                      ? 'text-green-base'
+                                                                      : 'text-red-base'
+                                                            }`}
+                                                        >
+                                                            {row.VARIACAO_ANO_PCT === null ? '—' : formatPercent(row.VARIACAO_ANO_PCT)}
+                                                        </span>
+                                                    </>
+                                                }
+                                            />
+                                            <CardField label="Projeção Fim de Mês" value={formatCurrency(row.PROJECAO_VENDA)} />
+                                            <CardValorMeta
+                                                label="Margem (vs. Meta)"
+                                                valor={margemAtual}
+                                                meta={row.META_MARGEM_PCT / 100}
+                                                formatValor={formatPercent}
+                                            />
+                                            <CardValorMeta
+                                                label="Compra (vs. Meta)"
+                                                valor={row.COMPRA_ATUAL}
+                                                meta={row.META_COMPRA}
+                                                formatValor={formatCurrency}
+                                                percentual={row.PERC_COMPRA_VENDA}
+                                            />
+                                            <CardField label="Compra Anual" value={formatCurrency(row.COMPRA_ANUAL)} />
+                                            <CardValorMeta
+                                                label="Avaria (vs. Meta)"
+                                                valor={row.AVARIA_ATUAL}
+                                                meta={row.META_AVARIA}
+                                                formatValor={formatCurrency}
+                                                menorEhMelhor
+                                            />
+                                            <CardField label="Estoque Atual" value={formatCurrency(row.VALOR_ESTOQUE)} />
+                                        </div>
+                                    </MobileCard>
+                                )
+                            })}
+                        </div>
+                    )}
+
+                    <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                         <table className="w-full min-w-[1250px] text-sm">
                             <thead>
                                 <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

@@ -4,6 +4,7 @@ import FilialMultiFilter from '../FilialMultiFilter'
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
+import { MobileCard, CardField } from '../MobileCard'
 import ValidadeStatusModal from './ValidadeStatusModal'
 import { Settings, ChevronDown, Check } from 'lucide-react'
 import { useMe } from '../../hooks/useMe'
@@ -220,7 +221,67 @@ export default function ValidadeConteudo() {
                 </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {(loading || loadingTipos) && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && !loadingTipos && registros.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">
+                    Nenhum registro de validade encontrado.
+                </p>
+            )}
+
+            {!loading && !loadingTipos && registros.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {registros.map((r, i) => {
+                        const dias = diasRestantes(r.DTVALIDADE)
+                        const chave = chaveValidade(r)
+                        const statusAtual = overrides[chave] ?? { id: r.STATUS_TIPO_ID, nome: r.STATUS_NOME, cor: r.STATUS_COR }
+                        return (
+                            <MobileCard key={i}>
+                                <p className="text-xs text-gray-dark dark:text-dark-text-muted">{nomeFilial(r.IDEMPRESA)}</p>
+                                <p className="font-medium text-gray-text dark:text-dark-text">{r.DESCRICAOPRODUTO}</p>
+                                <ProdutoCodigos idsubproduto={r.IDSUBPRODUTO} idcodbarprod={r.IDCODBARPROD} />
+                                <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                    <CardField label="Qtd" value={r.QTDPRODUTO} />
+                                    <CardField label="Valor estimado" value={formatCurrency(r.VALOR_ESTIMADO)} />
+                                    <CardField
+                                        label="Lançamento"
+                                        value={r.DTLANCAMENTO ? formatDate(r.DTLANCAMENTO) : '—'}
+                                        valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                    />
+                                    <CardField
+                                        label="Validade"
+                                        value={
+                                            <>
+                                                <span className={dias < 0 ? 'text-red-base' : dias <= 15 ? 'text-orange-base' : ''}>
+                                                    {formatDate(r.DTVALIDADE)}
+                                                </span>
+                                                <span className="ml-2 text-xs font-normal text-gray-dark dark:text-dark-text-muted">
+                                                    {dias < 0 ? `${Math.abs(dias)}d vencido` : `${dias}d`}
+                                                </span>
+                                            </>
+                                        }
+                                    />
+                                    <CardField
+                                        label="Status"
+                                        value={<StatusPicker tipos={tipos} statusAtual={statusAtual} onChange={(id) => alterarStatus(r, id)} />}
+                                    />
+                                    <CardField
+                                        label="Observação"
+                                        value={r.OBSERVACAO ?? '—'}
+                                        valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                    />
+                                </div>
+                            </MobileCard>
+                        )
+                    })}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[900px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

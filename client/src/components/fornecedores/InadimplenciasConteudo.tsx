@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import Spinner from '../Spinner'
 import Modal from '../Modal'
+import { MobileCard, CardField } from '../MobileCard'
 import { Plus, Trash2, Pencil } from 'lucide-react'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
@@ -189,7 +190,74 @@ export default function InadimplenciasConteudo() {
 
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && linhas.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">Nenhum lançamento encontrado.</p>
+            )}
+
+            {!loading && linhas.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {linhas.map((l) => (
+                        <MobileCard key={l.id}>
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="font-medium text-gray-text dark:text-dark-text">{l.fornecedor_nome}</p>
+                                    <p className="text-xs text-gray-dark dark:text-dark-text-muted">{l.titulo ?? '—'}</p>
+                                </div>
+                                <div className="flex shrink-0 gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditando(l)
+                                            setMostrarForm(true)
+                                        }}
+                                        className="rounded-lg p-1.5 text-gray-dark transition hover:bg-gray-base/10 dark:text-dark-text-muted dark:hover:bg-dark-border/30"
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => excluir(l.id)}
+                                        className="rounded-lg p-1.5 text-red-base transition hover:bg-red-base/10"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                <CardField label="Loja" value={l.idempresa ? nomeFilial(l.idempresa) : '—'} />
+                                <CardField
+                                    label="Movimento"
+                                    value={formatarData(l.data_movimento)}
+                                    valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                />
+                                <CardField
+                                    label="Vencimento"
+                                    value={formatarData(l.data_vencimento)}
+                                    valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                />
+                                <CardField label="Vendedor" value={l.vendedor_nome ?? '—'} />
+                                <CardField label="Saldo devido" value={formatarMoeda(Number(l.saldo_devido))} />
+                                <CardField
+                                    label="Status"
+                                    value={
+                                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[l.status]}`}>
+                                            {STATUS_LABEL[l.status]}
+                                        </span>
+                                    }
+                                />
+                            </div>
+                        </MobileCard>
+                    ))}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[1100px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

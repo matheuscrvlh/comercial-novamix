@@ -4,6 +4,7 @@ import FilialMultiFilter from '../FilialMultiFilter'
 import DateRangeFilter from '../DateRangeFilter'
 import Spinner from '../Spinner'
 import ProdutoCodigos from '../ProdutoCodigos'
+import { MobileCard, CardField } from '../MobileCard'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatDate } from '../../lib/format'
@@ -69,7 +70,47 @@ export default function CotacaoConcorrenteConteudo() {
 
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
 
-            <div className="overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            {loading && (
+                <div className="flex justify-center py-10 lg:hidden">
+                    <Spinner className="h-5 w-5" />
+                </div>
+            )}
+
+            {!loading && registros.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted lg:hidden">Nenhuma cotação encontrada.</p>
+            )}
+
+            {!loading && registros.length > 0 && (
+                <div className="flex flex-col gap-3 lg:hidden">
+                    {registros.map((r, i) => {
+                        const diferenca = r.PRECO_NOSSO !== null ? r.PRECO_NOSSO - r.PRECO_CONCORRENTE : null
+                        return (
+                            <MobileCard key={i}>
+                                <p className="font-medium text-gray-text dark:text-dark-text">{r.DESCRICAOPRODUTO}</p>
+                                <ProdutoCodigos idsubproduto={r.IDSUBPRODUTO} idcodbarprod={r.IDCODBARPROD} />
+                                <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                    <CardField label="Loja" value={nomeFilial(r.IDEMPRESA)} />
+                                    <CardField label="Concorrente" value={r.CONCORRENTE_NOME} />
+                                    <CardField label="Preço concorrente" value={formatCurrency(r.PRECO_CONCORRENTE)} />
+                                    <CardField label="Nosso preço" value={formatCurrency(r.PRECO_NOSSO)} />
+                                    <CardField
+                                        label="Diferença"
+                                        value={formatCurrency(diferenca)}
+                                        valueClassName={diferenca === null ? '' : diferenca > 0 ? 'text-red-base' : 'text-green-base'}
+                                    />
+                                    <CardField
+                                        label="Data"
+                                        value={formatDate(r.DATA_COTACAO)}
+                                        valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                    />
+                                </div>
+                            </MobileCard>
+                        )
+                    })}
+                </div>
+            )}
+
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 <table className="w-full min-w-[900px] text-sm">
                     <thead>
                         <tr className="border-b border-gray-base/30 text-left text-xs font-semibold uppercase tracking-wide text-gray-dark dark:border-dark-border dark:text-dark-text-muted">

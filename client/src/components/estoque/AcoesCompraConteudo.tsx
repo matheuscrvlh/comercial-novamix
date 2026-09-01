@@ -5,6 +5,7 @@ import MercadologicoFilter, { type MercadologicoSelecao } from '../Mercadologico
 import Spinner from '../Spinner'
 import TabButtons from '../TabButtons'
 import ProdutoCodigos from '../ProdutoCodigos'
+import { MobileCard, CardField } from '../MobileCard'
 import { useMe } from '../../hooks/useMe'
 import { useApi } from '../../hooks/useApi'
 import { formatCurrency, formatDate, formatNumber } from '../../lib/format'
@@ -93,7 +94,76 @@ export default function AcoesCompraConteudo() {
 
             <TabButtons abas={abasComContagem} ativa={aba} onChange={(id) => setAba(id as AbaId)} />
 
-            <div className="max-h-[500px] overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface">
+            <div className="flex max-h-[500px] flex-col gap-3 overflow-y-auto lg:hidden">
+                {loadingEstoqueListas && (
+                    <div className="flex justify-center py-10">
+                        <Spinner className="h-5 w-5" />
+                    </div>
+                )}
+
+                {!loadingEstoqueListas && aba === 'comprar' && comprarUrgente.length === 0 && (
+                    <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted">Nenhum produto com estoque crítico.</p>
+                )}
+                {!loadingEstoqueListas &&
+                    aba === 'comprar' &&
+                    comprarUrgente.map((row, i) => (
+                        <MobileCard key={i}>
+                            <p className="truncate font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                            <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                            <p className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                {row.NOME_EMPRESA} · {row.DESCRSECAO}
+                            </p>
+                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                <CardField label="Estoque" value={formatNumber(row.QTDATUALESTOQUE)} />
+                                <CardField label="Dias" value={formatNumber(row.DIAS_COBERTURA)} valueClassName="text-red-base" />
+                            </div>
+                        </MobileCard>
+                    ))}
+
+                {!loadingEstoqueListas && aba === 'excesso' && excessoEstoque.length === 0 && (
+                    <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted">Nenhum produto com excesso de estoque.</p>
+                )}
+                {!loadingEstoqueListas &&
+                    aba === 'excesso' &&
+                    excessoEstoque.map((row, i) => (
+                        <MobileCard key={i}>
+                            <p className="truncate font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                            <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                            <p className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                {row.NOME_EMPRESA} · {row.DESCRSECAO}
+                            </p>
+                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                <CardField label="Valor" value={formatCurrency(row.VALATUALESTOQUE)} />
+                                <CardField label="Dias" value={formatNumber(row.DIAS_COBERTURA)} valueClassName="text-orange-base" />
+                            </div>
+                        </MobileCard>
+                    ))}
+
+                {!loadingEstoqueListas && aba === 'inativar' && candidatosInativar.length === 0 && (
+                    <p className="py-6 text-center text-sm text-gray-dark dark:text-dark-text-muted">Nenhum candidato a inativação.</p>
+                )}
+                {!loadingEstoqueListas &&
+                    aba === 'inativar' &&
+                    candidatosInativar.map((row, i) => (
+                        <MobileCard key={i}>
+                            <p className="truncate font-medium text-gray-text dark:text-dark-text">{row.DESCRICAOPRODUTO}</p>
+                            <ProdutoCodigos idsubproduto={row.IDSUBPRODUTO} idcodbarprod={row.IDCODBARPROD} />
+                            <p className="text-xs text-gray-dark dark:text-dark-text-muted">
+                                {row.NOME_EMPRESA} · {row.DESCRSECAO ?? '—'}
+                            </p>
+                            <div className="mt-2 flex flex-col divide-y divide-gray-base/10 dark:divide-dark-border/60">
+                                <CardField label="Valor" value={formatCurrency(row.VALATUALESTOQUE)} />
+                                <CardField
+                                    label="Última venda"
+                                    value={row.DTULTIMAVENDA ? formatDate(row.DTULTIMAVENDA) : 'Nunca'}
+                                    valueClassName="font-normal text-gray-dark dark:text-dark-text-muted"
+                                />
+                            </div>
+                        </MobileCard>
+                    ))}
+            </div>
+
+            <div className="hidden max-h-[500px] overflow-y-auto overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm lg:block dark:border-dark-border dark:bg-dark-surface">
                 {aba === 'comprar' && (
                     <table className="w-full min-w-[500px] text-sm">
                         <thead className="sticky top-0 bg-white dark:bg-dark-surface">
