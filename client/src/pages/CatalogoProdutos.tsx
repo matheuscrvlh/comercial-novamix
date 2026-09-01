@@ -152,7 +152,7 @@ export default function CatalogoProdutos() {
             subtitulo="Hierarquia mercadológica (divisão, seção, grupo, subgrupo) e status de cada produto. Busque por nome, código interno ou código de barras."
             filtros={
                 <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-72">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Buscar produto
                         </span>
@@ -161,17 +161,17 @@ export default function CatalogoProdutos() {
                             value={campo}
                             onChange={(e) => setCampo(e.target.value)}
                             placeholder="Nome, código interno ou de barras"
-                            className="w-72 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         />
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-56">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Divisão
                         </span>
                         <select
                             value={iddivisao}
                             onChange={(e) => selecionarDivisao(e.target.value)}
-                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="">Todas</option>
                             {opcoesDivisao.map((d) => (
@@ -181,14 +181,14 @@ export default function CatalogoProdutos() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-56">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Seção
                         </span>
                         <select
                             value={idsecao}
                             onChange={(e) => selecionarSecao(e.target.value)}
-                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="">Todas</option>
                             {opcoesSecao.map((s) => (
@@ -198,14 +198,14 @@ export default function CatalogoProdutos() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-56">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Grupo
                         </span>
                         <select
                             value={idgrupo}
                             onChange={(e) => selecionarGrupo(e.target.value)}
-                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="">Todos</option>
                             {opcoesGrupo.map((g) => (
@@ -215,14 +215,14 @@ export default function CatalogoProdutos() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-56">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Subgrupo
                         </span>
                         <select
                             value={idsubgrupo}
                             onChange={(e) => selecionarSubgrupo(e.target.value)}
-                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="">Todos</option>
                             {opcoesSubgrupo.map((sg) => (
@@ -232,35 +232,37 @@ export default function CatalogoProdutos() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-36">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Status
                         </span>
                         <select
                             value={status}
                             onChange={(e) => selecionarStatus(e.target.value as Status)}
-                            className="w-36 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value="ativo">Ativos</option>
                             <option value="inativo">Inativos</option>
                             <option value="todos">Todos</option>
                         </select>
                     </div>
-                    <button
-                        type="submit"
-                        className="rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-light"
-                    >
-                        Buscar
-                    </button>
-                    {temFiltroAtivo && (
+                    <div className="flex w-full gap-3 sm:w-auto">
                         <button
-                            type="button"
-                            onClick={limparFiltros}
-                            className="rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border/30"
+                            type="submit"
+                            className="flex-1 rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-light sm:flex-none"
                         >
-                            Limpar filtros
+                            Buscar
                         </button>
-                    )}
+                        {temFiltroAtivo && (
+                            <button
+                                type="button"
+                                onClick={limparFiltros}
+                                className="flex-1 rounded-lg border border-gray-base/30 px-4 py-2 text-sm font-semibold text-gray-text transition hover:bg-gray-base/10 dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border/30 sm:flex-none"
+                            >
+                                Limpar filtros
+                            </button>
+                        )}
+                    </div>
                 </form>
             }
         >

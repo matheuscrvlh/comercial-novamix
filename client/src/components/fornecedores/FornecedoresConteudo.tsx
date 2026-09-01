@@ -47,23 +47,29 @@ export default function FornecedoresConteudo() {
     return (
         <>
             <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
-                <div className="flex flex-col gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-72">
                     <span className={labelClass}>Buscar fornecedor</span>
                     <input
                         type="text"
                         value={campo}
                         onChange={(e) => setCampo(e.target.value)}
                         placeholder="Nome, CNPJ ou vendedor"
-                        className={`${inputClass} w-72`}
+                        className={inputClass}
                     />
                 </div>
-                <button type="submit" className={botaoPrimario}>
-                    Buscar
-                </button>
-                <button type="button" onClick={() => setMostrarNovo(true)} className={`${botaoPrimario} flex items-center gap-1.5`}>
-                    <Plus className="h-4 w-4" />
-                    Novo fornecedor
-                </button>
+                <div className="flex w-full gap-3 sm:w-auto">
+                    <button type="submit" className={`${botaoPrimario} flex-1 sm:flex-none`}>
+                        Buscar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMostrarNovo(true)}
+                        className={`${botaoPrimario} flex flex-1 items-center justify-center gap-1.5 sm:flex-none`}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Novo fornecedor
+                    </button>
+                </div>
             </form>
 
             {erro && <p className="mb-4 text-sm text-red-base">{erro}</p>}
@@ -294,7 +300,7 @@ function FornecedorLinha({
 
             {expandido && (
                 <div className="border-t border-gray-base/20 bg-gray-base/5 px-4 py-4 dark:border-dark-border/60 dark:bg-dark-bg/30">
-                    <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                    <div className="mb-5 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
                         <Campo label="CNPJ/CPF" valor={f.CNPJCPF ?? '—'} />
                         <Campo label="Telefone" valor={f.FONE1 || f.FONE2 || '—'} />
                         <Campo label="Celular" valor={f.FONECELULAR || '—'} />
@@ -470,7 +476,7 @@ function VendedorFormModal({
                     <input value={cargo} onChange={(e) => setCargo(e.target.value)} className={inputClass} />
                 </label>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="flex flex-col gap-1">
                         <span className={labelClass}>Telefone</span>
                         <input value={telefone} onChange={(e) => setTelefone(e.target.value)} className={inputClass} />

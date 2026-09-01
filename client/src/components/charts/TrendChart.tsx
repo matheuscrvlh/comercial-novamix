@@ -98,7 +98,7 @@ export default function TrendChart({ titulo, legendaAtual, legendaAnterior, metr
         <div className="rounded-xl border border-gray-base/30 bg-white p-5 shadow-sm dark:border-dark-border dark:bg-dark-surface">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-gray-text dark:text-dark-text">{titulo}</h3>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                     <div className="flex gap-1 rounded-lg border border-gray-base/30 p-0.5 dark:border-dark-border">
                         {metricas.map((m) => (
                             <button
@@ -129,13 +129,13 @@ export default function TrendChart({ titulo, legendaAtual, legendaAnterior, metr
             </div>
 
             {loading && (
-                <div className="flex h-[340px] items-center justify-center">
+                <div className="flex aspect-960/340 w-full items-center justify-center">
                     <Spinner className="h-6 w-6" />
                 </div>
             )}
 
             {!loading && dados.length === 0 && (
-                <div className="flex h-[340px] items-center justify-center text-sm text-gray-dark dark:text-dark-text-muted">
+                <div className="flex aspect-960/340 w-full items-center justify-center text-sm text-gray-dark dark:text-dark-text-muted">
                     Sem dados no período.
                 </div>
             )}
@@ -144,11 +144,9 @@ export default function TrendChart({ titulo, legendaAtual, legendaAnterior, metr
                 <svg
                     ref={svgRef}
                     viewBox={`0 0 ${LARGURA} ${ALTURA}`}
-                    width="100%"
-                    height={ALTURA}
                     onMouseMove={aoMoverMouse}
                     onMouseLeave={() => setHoverIndex(null)}
-                    className="overflow-visible"
+                    className="aspect-960/340 w-full overflow-visible"
                 >
                     {valoresTickY.map((v, i) => (
                         <g key={i}>

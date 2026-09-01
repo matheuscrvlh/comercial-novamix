@@ -34,7 +34,7 @@ export default function Tributacao() {
             subtitulo="Consulta de ICMS por produto (situação tributária, alíquota, substituição). Busque por nome, código interno ou código de barras."
             filtros={
                 <form onSubmit={buscar} className="mb-8 flex flex-wrap items-end gap-3">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-80">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Buscar produto
                         </span>
@@ -43,12 +43,12 @@ export default function Tributacao() {
                             value={campo}
                             onChange={(e) => setCampo(e.target.value)}
                             placeholder="Nome, código interno ou de barras"
-                            className="w-80 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         />
                     </div>
                     <button
                         type="submit"
-                        className="rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-light"
+                        className="w-full rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-light sm:w-auto"
                     >
                         Buscar
                     </button>

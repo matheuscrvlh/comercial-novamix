@@ -100,19 +100,19 @@ export default function InadimplenciasConteudo() {
     return (
         <>
             <form onSubmit={buscar} className="mb-6 flex flex-wrap items-end gap-3">
-                <div className="flex flex-col gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-64">
                     <span className={labelClass}>Buscar</span>
                     <input
                         type="text"
                         value={campo}
                         onChange={(e) => setCampo(e.target.value)}
                         placeholder="Fornecedor ou título"
-                        className={`${inputClass} w-64`}
+                        className={inputClass}
                     />
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-56">
                     <span className={labelClass}>Fornecedor</span>
-                    <select value={fornecedorId} onChange={(e) => setFornecedorId(e.target.value)} className={`${inputClass} w-56`}>
+                    <select value={fornecedorId} onChange={(e) => setFornecedorId(e.target.value)} className={inputClass}>
                         <option value="">Todos</option>
                         {(fornecedores ?? []).map((f) => (
                             <option key={f.id} value={f.id}>
@@ -121,9 +121,9 @@ export default function InadimplenciasConteudo() {
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-40">
                     <span className={labelClass}>Status</span>
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className={`${inputClass} w-40`}>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
                         <option value="">Todos</option>
                         {Object.entries(STATUS_LABEL).map(([valor, label]) => (
                             <option key={valor} value={valor}>
@@ -132,12 +132,12 @@ export default function InadimplenciasConteudo() {
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-56">
                     <span className={labelClass}>Ordenar por</span>
                     <select
                         value={ordenacao}
                         onChange={(e) => setOrdenacao(e.target.value as Ordenacao)}
-                        className={`${inputClass} w-56`}
+                        className={inputClass}
                     >
                         {Object.entries(ORDENACAO_LABEL).map(([valor, label]) => (
                             <option key={valor} value={valor}>
@@ -146,20 +146,22 @@ export default function InadimplenciasConteudo() {
                         ))}
                     </select>
                 </div>
-                <button type="submit" className={botaoPrimario}>
-                    Buscar
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setEditando(null)
-                        setMostrarForm(true)
-                    }}
-                    className={`${botaoPrimario} flex items-center gap-1.5`}
-                >
-                    <Plus className="h-4 w-4" />
-                    Novo lançamento
-                </button>
+                <div className="flex w-full gap-3 sm:w-auto">
+                    <button type="submit" className={`${botaoPrimario} flex-1 sm:flex-none`}>
+                        Buscar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setEditando(null)
+                            setMostrarForm(true)
+                        }}
+                        className={`${botaoPrimario} flex flex-1 items-center justify-center gap-1.5 sm:flex-none`}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Novo lançamento
+                    </button>
+                </div>
             </form>
 
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -444,7 +446,7 @@ function InadimplenciaFormModal({
                     </label>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="flex flex-col gap-1">
                         <span className={labelClass}>Loja</span>
                         <select value={idempresa} onChange={(e) => setIdempresa(e.target.value)} className={inputClass}>
@@ -462,7 +464,7 @@ function InadimplenciaFormModal({
                     </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="flex flex-col gap-1">
                         <span className={labelClass}>Data movimento</span>
                         <input type="date" value={dataMovimento} onChange={(e) => setDataMovimento(e.target.value)} className={inputClass} />
@@ -473,7 +475,7 @@ function InadimplenciaFormModal({
                     </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="flex flex-col gap-1">
                         <span className={labelClass}>Saldo devido*</span>
                         <input

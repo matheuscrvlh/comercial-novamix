@@ -112,14 +112,14 @@ export default function Metas() {
             subtitulo="Metas mensais de venda, margem, compra, avaria e redução de estoque por seção, por loja."
             filtros={
                 <div className="mb-8 flex flex-wrap gap-4">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-56">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Loja
                         </span>
                         <select
                             value={idempresa}
                             onChange={(e) => setIdempresa(Number(e.target.value))}
-                            className="w-56 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         >
                             <option value={IDEMPRESA_GERAL}>Geral (todas as lojas)</option>
                             {lojasDisponiveis.map((id) => (
@@ -129,7 +129,7 @@ export default function Metas() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-48">
                         <span className="text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Mês de referência
                         </span>
@@ -137,7 +137,7 @@ export default function Metas() {
                             type="month"
                             value={mesanoParaInput(mesano)}
                             onChange={(e) => setMesano(inputParaMesano(e.target.value))}
-                            className="w-48 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                            className="w-full rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         />
                     </div>
                 </div>

@@ -61,7 +61,7 @@ export default function ProdutoDetalheModal({ idsubproduto, onClose }: ProdutoDe
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted">
                             Cadastro
                         </h3>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
                             <Campo label="Fabricante" valor={data.cadastro.FABRICANTE ?? '—'} />
                             <Campo label="Referência" valor={data.cadastro.REFERENCIA ?? '—'} />
                             <Campo
